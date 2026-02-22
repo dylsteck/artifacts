@@ -1,34 +1,42 @@
-# HTML Elements Example
+# Artifacts
 
-<p>
-  <!-- iOS -->
-  <img alt="Supports Expo iOS" longdesc="Supports Expo iOS" src="https://img.shields.io/badge/iOS-4630EB.svg?style=flat-square&logo=APPLE&labelColor=999999&logoColor=fff" />
-  <!-- Android -->
-  <img alt="Supports Expo Android" longdesc="Supports Expo Android" src="https://img.shields.io/badge/Android-4630EB.svg?style=flat-square&logo=ANDROID&labelColor=A4C639&logoColor=fff" />
-  <!-- Web -->
-  <img alt="Supports Expo Web" longdesc="Supports Expo Web" src="https://img.shields.io/badge/web-4630EB.svg?style=flat-square&logo=GOOGLE-CHROME&labelColor=4285F4&logoColor=fff" />
-</p>
+A React Native AI chat app built with Expo Router and the Vercel AI SDK. Stream responses from Claude models with persistent chat history stored locally in SQLite.
 
-## Launch your own
+## Features
 
-[![Launch with Expo](https://github.com/expo/examples/blob/master/.gh-assets/launch.svg?raw=true)](https://launch.expo.dev/?github=https://github.com/expo/examples/tree/master/with-html)
+- Real-time streaming chat with Claude (Sonnet, Opus, Haiku)
+- Model selector in the header
+- Chat history in a slide-out drawer
+- SQLite persistence across sessions
 
-## 🚀 How to use
+## Setup
 
-<!-- Setup instructions -->
+```bash
+bun install
+cp .env.example .env.local
+# Add your ANTHROPIC_API_KEY to .env.local
+bun run start
+```
 
-- Install with `yarn` or `npm install`.
-- Run `yarn start` or `npm run start` to try it out.
+## Stack
 
-Launch on all platforms with Expo Application Services (EAS).
+- [Expo Router](https://docs.expo.dev/router/introduction/) — file-based routing + server API routes
+- [Vercel AI SDK v6](https://sdk.vercel.ai/docs) — streaming, `useChat`, Anthropic provider
+- [expo-sqlite](https://docs.expo.dev/versions/latest/sdk/sqlite/) — local chat persistence
+- NativeWind, Reanimated, SF Symbols
 
-- Launch the website: `npx eas-cli deploy` — [Learn more](https://docs.expo.dev/eas/hosting/get-started/)
-- Launch on iOS and Android using: `npx eas-cli build` — [Learn more](https://expo.dev/eas)
+## Project Structure
 
-## 📝 Notes
+```
+src/
+├── app/
+│   ├── api/chat+api.ts       # POST /api/chat — streaming endpoint
+│   └── (home)/
+│       ├── index.tsx         # Welcome screen
+│       └── chat/[id].tsx     # Active chat screen
+├── components/chat/          # ChatInput, MessageBubble, ModelSelector
+├── components/drawer/        # Animated sidebar with recent chats
+└── lib/                      # db.ts, model-context.tsx, generate-api-url.ts
+```
 
-Not all HTML elements are supported yet, notable `<button>`, `<form>`, `<label>`, `<img>`, and `<input>` are not supported. Use Expo-equivalents for these elements.
-
-This example combines the `@expo/html-elements` Babel plugin and [`nativewind`](https://www.nativewind.dev/) which enables CSS-like styling.
-
-You can write pure HTML elements which are converted to native views at build time.
+See [AGENTS.md](./AGENTS.md) for a full architecture reference.

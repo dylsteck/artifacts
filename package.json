@@ -10,8 +10,11 @@
     "deploy": "npx expo export -p web && npx eas-cli@latest deploy"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.46",
+    "@ai-sdk/react": "^3.0.99",
     "@bacons/apple-colors": "^0.0.8",
     "@expo/html-elements": "^0.13.6",
+    "ai": "^6.0.97",
     "clsx": "^2.1.1",
     "expo": "^54.0.1",
     "expo-constants": "~18.0.8",
@@ -20,6 +23,7 @@
     "expo-linking": "~8.0.7",
     "expo-router": "~6.0.0",
     "expo-splash-screen": "~31.0.8",
+    "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.7",
     "expo-symbols": "~1.0.8",
     "expo-web-browser": "~15.0.6",

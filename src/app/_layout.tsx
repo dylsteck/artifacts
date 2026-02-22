@@ -7,6 +7,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import ThemeProvider from "@/components/theme-provider";
 import { DrawerProvider, useDrawer, DRAWER_WIDTH } from "@/components/drawer/DrawerContext";
 import { Drawer } from "@/components/drawer/Drawer";
+import { SQLiteProvider } from "expo-sqlite";
+import { initDb } from "@/lib/db";
 
 // Wraps the entire app content — pushes right and dims as drawer opens
 function AppContent() {
@@ -42,10 +44,12 @@ export { ErrorBoundary } from "expo-router";
 export default function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#1C1C1E" }}>
-      <DrawerProvider>
-        <AppContent />
-        <Drawer />
-      </DrawerProvider>
+      <SQLiteProvider databaseName="artifacts.db" onInit={initDb}>
+        <DrawerProvider>
+          <AppContent />
+          <Drawer />
+        </DrawerProvider>
+      </SQLiteProvider>
     </GestureHandlerRootView>
   );
 }

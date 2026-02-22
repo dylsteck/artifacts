@@ -1,9 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
+  ScrollView,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { SymbolView } from "expo-symbols";
 import { useRouter } from "expo-router";
@@ -16,7 +18,11 @@ import Animated, {
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSQLiteContext } from "expo-sqlite";
 import { useDrawer, DRAWER_WIDTH } from "./DrawerContext";
+import { getRecentChats, deleteChat } from "@/lib/db";
+
+type Chat = { id: string; title: string; model: string; updated_at: number };
 
 const EDGE_HIT_SLOP = 30;
 
@@ -24,11 +30,18 @@ export function Drawer() {
   const { isOpen, open, close, animProgress } = useDrawer();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const db = useSQLiteContext();
+  const [recentChats, setRecentChats] = useState<Chat[]>([]);
 
   const isOpenShared = useSharedValue(false);
   const startProgress = useSharedValue(0);
 
+  // Load recent chats whenever drawer opens
   useEffect(() => {
+    if (isOpen) {
+      getRecentChats(db).then(setRecentChats);
+    }
+
     isOpenShared.value = isOpen;
     if (isOpen) {
       animProgress.value = withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) });
@@ -36,6 +49,20 @@ export function Drawer() {
       animProgress.value = withTiming(0, { duration: 260, easing: Easing.out(Easing.cubic) });
     }
   }, [isOpen]);
+
+  async function handleDeleteChat(chatId: string) {
+    Alert.alert("Delete Chat", "Remove this chat from history?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await deleteChat(db, chatId);
+          setRecentChats((prev) => prev.filter((c) => c.id !== chatId));
+        },
+      },
+    ]);
+  }
 
   // Drawer panel slides from -DRAWER_WIDTH (hidden) to 0 (visible)
   const drawerStyle = useAnimatedStyle(() => ({
@@ -50,7 +77,6 @@ export function Drawer() {
     })
     .onUpdate((event) => {
       const currently = isOpenShared.value;
-      // When closed, only respond to drags starting from left edge
       if (!currently && event.x > EDGE_HIT_SLOP && event.translationX <= 0) return;
       const newProgress = startProgress.value + event.translationX / DRAWER_WIDTH;
       animProgress.value = Math.max(0, Math.min(1, newProgress));
@@ -91,10 +117,13 @@ export function Drawer() {
 
           {/* Nav items */}
           <View style={styles.navSection}>
-            <View style={styles.navItem}>
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => { router.push("/"); close(); }}
+            >
               <SymbolView name="bubble.left.fill" size={20} tintColor="rgba(255,255,255,0.85)" />
               <Text style={styles.navLabel}>Chat</Text>
-            </View>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.navItem}
@@ -110,8 +139,37 @@ export function Drawer() {
             <Text style={styles.recentsLabel}>RECENTS</Text>
           </View>
 
-          {/* Spacer */}
-          <View style={{ flex: 1 }} />
+          <ScrollView style={styles.recentsList} showsVerticalScrollIndicator={false}>
+            {recentChats.length === 0 && (
+              <Text style={styles.emptyText}>No recent chats</Text>
+            )}
+            {recentChats.map((chat) => (
+              <TouchableOpacity
+                key={chat.id}
+                style={styles.chatItem}
+                onPress={() => {
+                  router.push({ pathname: "/chat/[id]", params: { id: chat.id } });
+                  close();
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.chatTitle} numberOfLines={1}>
+                  {chat.title}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => handleDeleteChat(chat.id)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.deleteButton}
+                >
+                  <SymbolView
+                    name="trash"
+                    size={14}
+                    tintColor="rgba(255,255,255,0.3)"
+                  />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
           {/* Bottom: profile + new chat */}
           <View style={styles.bottomRow}>
@@ -119,7 +177,10 @@ export function Drawer() {
               <Text style={styles.avatarText}>D</Text>
             </View>
             <Text style={styles.profileName}>Dylan Steck</Text>
-            <TouchableOpacity style={styles.newChatButton} onPress={() => { router.push("/"); close(); }}>
+            <TouchableOpacity
+              style={styles.newChatButton}
+              onPress={() => { router.push("/"); close(); }}
+            >
               <SymbolView name="square.and.pencil" size={18} tintColor="rgba(255,255,255,0.9)" />
             </TouchableOpacity>
           </View>
@@ -182,6 +243,33 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     letterSpacing: 0.8,
+  },
+  recentsList: {
+    flex: 1,
+    paddingHorizontal: 12,
+  },
+  emptyText: {
+    color: "rgba(255,255,255,0.25)",
+    fontSize: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  chatItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    gap: 8,
+  },
+  chatTitle: {
+    flex: 1,
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 14,
+    fontWeight: "400",
+  },
+  deleteButton: {
+    padding: 4,
   },
   bottomRow: {
     flexDirection: "row",
