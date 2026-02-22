@@ -1,8 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Keyboard } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Keyboard, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path, Circle } from "react-native-svg";
 import { useSQLiteContext } from "expo-sqlite";
 import { ChatInput } from "@/components/chat/ChatInput";
@@ -30,11 +29,9 @@ export default function HomeScreen() {
   const router = useRouter();
   const db = useSQLiteContext();
   const { model } = useModel();
-  const insets = useSafeAreaInsets();
-
   async function handleSend(text: string) {
     const chatId = await createChat(db, { model });
-    router.push({
+    router.replace({
       pathname: "/chat/[id]",
       params: { id: chatId, initialMessage: text },
     });
@@ -44,9 +41,12 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        contentInset={{ bottom: COMPOSER_BOTTOM_INSET }}
-        scrollIndicatorInsets={{ bottom: COMPOSER_BOTTOM_INSET }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          Platform.OS !== "ios" && { paddingBottom: COMPOSER_BOTTOM_INSET },
+        ]}
+        contentInset={Platform.OS === "ios" ? { bottom: COMPOSER_BOTTOM_INSET } : undefined}
+        scrollIndicatorInsets={Platform.OS === "ios" ? { bottom: COMPOSER_BOTTOM_INSET } : undefined}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -59,7 +59,7 @@ export default function HomeScreen() {
       </ScrollView>
       <KeyboardStickyView
         style={styles.composerSticky}
-        offset={{ closed: -insets.bottom, opened: 8 }}
+        offset={{ closed: 0, opened: 8 }}
       >
         <ChatInput onSend={handleSend} />
       </KeyboardStickyView>

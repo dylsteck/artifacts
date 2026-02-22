@@ -63,6 +63,7 @@ export default function Layout() {
             title: "Chat",
             headerTitle: () => <ModelSelector />,
             headerBackButtonDisplayMode: "minimal",
+            headerLargeTitle: false,
           }}
         />
         <Stack.Screen

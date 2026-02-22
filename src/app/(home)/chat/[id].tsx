@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback, useState } from "react";
 import {
   View,
+  Text,
   FlatList,
   StyleSheet,
   ActivityIndicator,
@@ -12,7 +13,7 @@ import {
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useChat } from "@ai-sdk/react";
+import { useChat, type UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { fetch as expoFetch } from "expo/fetch";
 import { useSQLiteContext } from "expo-sqlite";
@@ -26,55 +27,64 @@ import {
   updateChatTitle,
 } from "@/lib/db";
 
-export default function ChatScreen() {
-  const { id, initialMessage } = useLocalSearchParams<{
-    id: string;
-    initialMessage?: string;
-  }>();
-  const db = useSQLiteContext();
-  const { model } = useModel();
+function toUIMessages(
+  stored: { id: string; role: string; content: string }[]
+): UIMessage[] {
+  return stored.map((m) => ({
+    id: m.id,
+    role: m.role as "user" | "assistant",
+    parts: [{ type: "text" as const, text: m.content }],
+  }));
+}
+
+function ChatContent({
+  id,
+  initialMessages,
+  initialMessageToSend,
+  db,
+  model,
+}: {
+  id: string;
+  initialMessages: UIMessage[];
+  initialMessageToSend?: string;
+  db: ReturnType<typeof useSQLiteContext>;
+  model: string;
+}) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList>(null);
-
-  const COMPOSER_BOTTOM_INSET = 100;
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const titleSet = useRef(false);
   const initialSent = useRef(false);
+  const COMPOSER_BOTTOM_INSET = 100;
 
   const { messages, sendMessage, status } = useChat({
+    id,
+    messages: initialMessages,
     transport: new DefaultChatTransport({
       api: generateAPIUrl("/api/chat"),
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       body: { model },
     }),
     onFinish: async ({ message }) => {
-      // Extract text from parts array
       const textContent = message.parts
         .filter((p) => p.type === "text")
         .map((p) => (p as { type: "text"; text: string }).text)
         .join("");
-
-      await saveMessage(db, {
-        chatId: id,
-        role: "assistant",
-        content: textContent,
-      });
+      console.log("[LLM] Complete:", textContent);
+      await saveMessage(db, { chatId: id, role: "assistant", content: textContent });
     },
   });
 
-  // Load existing messages from SQLite on mount
   useEffect(() => {
-    (async () => {
-      const stored = await getChatMessages(db, id);
-      if (stored.length === 0 && initialMessage && !initialSent.current) {
-        initialSent.current = true;
-        handleSend(initialMessage);
-      }
-    })();
-  }, [id]);
+    if (initialMessageToSend && !initialSent.current) {
+      initialSent.current = true;
+      saveMessage(db, { chatId: id, role: "user", content: initialMessageToSend });
+      sendMessage({ text: initialMessageToSend });
+    }
+  }, [initialMessageToSend, id, db, sendMessage]);
 
-  // Auto-set title from first user message
+  // Update chat title in DB for drawer (don't change header - keeps "Chat")
   useEffect(() => {
     if (!titleSet.current && messages.length > 0) {
       const firstUser = messages.find((m) => m.role === "user");
@@ -86,7 +96,6 @@ export default function ChatScreen() {
         if (title) {
           titleSet.current = true;
           updateChatTitle(db, id, title);
-          navigation.setOptions({ title });
         }
       }
     }
@@ -98,6 +107,18 @@ export default function ChatScreen() {
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
     }
   }, [messages.length]);
+
+  // Log assistant message updates as they stream (for debugging)
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (last?.role === "assistant") {
+      const text = last.parts
+        .filter((p) => p.type === "text")
+        .map((p) => (p as { type: "text"; text: string }).text)
+        .join("");
+      if (text) console.log("[LLM] Stream:", text);
+    }
+  }, [messages]);
 
   // Track keyboard visibility for tap-to-dismiss overlay
   useEffect(() => {
@@ -154,9 +175,24 @@ export default function ChatScreen() {
         data={messages}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        contentInset={{ bottom: COMPOSER_BOTTOM_INSET }}
-        scrollIndicatorInsets={{ bottom: COMPOSER_BOTTOM_INSET }}
+        contentContainerStyle={[
+          styles.listContent,
+          {
+            paddingTop: insets.top + 56,
+          },
+          Platform.OS === "ios" ? undefined : { paddingBottom: COMPOSER_BOTTOM_INSET },
+        ]}
+        contentInset={
+          Platform.OS === "ios"
+            ? { top: insets.top + 56, bottom: COMPOSER_BOTTOM_INSET }
+            : undefined
+        }
+        scrollIndicatorInsets={
+          Platform.OS === "ios"
+            ? { top: insets.top + 56, bottom: COMPOSER_BOTTOM_INSET }
+            : undefined
+        }
+        style={styles.list}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={
@@ -168,6 +204,7 @@ export default function ChatScreen() {
             {status === "submitted" ? (
               <View style={styles.thinkingRow}>
                 <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
+                <Text style={styles.thinkingText}>Thinking...</Text>
               </View>
             ) : null}
             <Pressable
@@ -179,7 +216,7 @@ export default function ChatScreen() {
       />
       <KeyboardStickyView
         style={styles.composerSticky}
-        offset={{ closed: -insets.bottom, opened: 8 }}
+        offset={{ closed: 0, opened: 8 }}
       >
         <ChatInput
           onSend={handleSend}
@@ -206,19 +243,72 @@ export default function ChatScreen() {
   );
 }
 
+export default function ChatScreen() {
+  const { id, initialMessage } = useLocalSearchParams<{
+    id: string;
+    initialMessage?: string;
+  }>();
+  const db = useSQLiteContext();
+  const { model } = useModel();
+  const [ready, setReady] = useState<{
+    initialMessages: UIMessage[];
+    initialMessageToSend?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const stored = await getChatMessages(db, id);
+      if (stored.length > 0) {
+        setReady({ initialMessages: toUIMessages(stored) });
+      } else if (initialMessage) {
+        setReady({ initialMessages: [], initialMessageToSend: initialMessage });
+      } else {
+        setReady({ initialMessages: [] });
+      }
+    })();
+  }, [id, db, initialMessage]);
+
+  if (!ready) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="rgba(255,255,255,0.5)" />
+      </View>
+    );
+  }
+
+  return (
+    <ChatContent
+      id={id}
+      initialMessages={ready.initialMessages}
+      initialMessageToSend={ready.initialMessageToSend}
+      db={db}
+      model={model}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1C1C1E",
   },
+  list: {
+    flex: 1,
+  },
   listContent: {
     flexGrow: 1,
-    paddingTop: 16,
-    paddingBottom: 8,
+    minHeight: 200,
   },
   thinkingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
+  },
+  thinkingText: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 14,
   },
   dismissArea: {
     minHeight: 200,

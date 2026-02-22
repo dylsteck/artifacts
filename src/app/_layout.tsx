@@ -19,6 +19,7 @@ import ThemeProvider from "@/components/theme-provider";
 import { DrawerProvider, useDrawer, DRAWER_WIDTH } from "@/components/drawer/DrawerContext";
 import { Drawer } from "@/components/drawer/Drawer";
 import { SQLiteProvider } from "expo-sqlite";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { initDb } from "@/lib/db";
 
 const EDGE_ZONE = 60; // px from left edge that triggers open
@@ -89,14 +90,16 @@ export { ErrorBoundary } from "expo-router";
 export default function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#1C1C1E" }}>
-      <KeyboardProvider>
-        <SQLiteProvider databaseName="artifacts.db" onInit={initDb}>
+      <SafeAreaProvider>
+        <KeyboardProvider>
+          <SQLiteProvider databaseName="artifacts.db" onInit={initDb}>
           <DrawerProvider>
             <AppContent />
             <Drawer />
           </DrawerProvider>
-        </SQLiteProvider>
-      </KeyboardProvider>
+          </SQLiteProvider>
+        </KeyboardProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

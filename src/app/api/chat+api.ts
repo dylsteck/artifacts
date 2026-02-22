@@ -12,6 +12,10 @@ export async function POST(req: Request) {
     model: toGatewayModel(model),
     messages: await convertToModelMessages(messages),
     maxOutputTokens: 4096,
+    onChunk({ chunk }) {
+      if (chunk.type === "text") console.log("[LLM] chunk:", chunk.text);
+      if (chunk.type === "reasoning") console.log("[LLM] reasoning:", chunk.text);
+    },
   });
 
   return result.toUIMessageStreamResponse({
