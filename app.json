@@ -1,0 +1,17 @@
+{
+  "scheme": "acme",
+  "userInterfaceStyle": "automatic",
+  "orientation": "default",
+  "experiments": {
+    "typedRoutes": true
+  },
+  "plugins": [
+    "expo-router",
+    "expo-web-browser"
+  ],
+  "name": "with-html",
+  "slug": "with-html",
+  "ios": {
+    "bundleIdentifier": "com.dylsteck.with-html"
+  }
+}
