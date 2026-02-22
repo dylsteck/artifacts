@@ -6,19 +6,26 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Keyboard,
+  Platform,
 } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { SymbolView } from "expo-symbols";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useModel, type ModelId, MODELS } from "@/lib/model-context";
+
+const HEADER_HEIGHT = 52;
 
 export function ModelSelector() {
   const { model, setModel, modelInfo } = useModel();
   const [visible, setVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   function handleSelect(id: ModelId) {
     setModel(id);
     setVisible(false);
   }
+
+  const menuTop = insets.top + HEADER_HEIGHT;
 
   return (
     <>
@@ -56,24 +63,31 @@ export function ModelSelector() {
           }}
         >
           <View style={styles.overlay}>
-            <View style={styles.menu}>
-                {MODELS.map((m) => (
-                  <TouchableOpacity
-                    key={m.id}
-                    style={styles.menuItem}
-                    onPress={() => handleSelect(m.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.menuItemText}>{m.name}</Text>
-                    {model === m.id && (
-                      <SymbolView
-                        name="checkmark"
-                        size={14}
-                        tintColor="rgba(255,255,255,0.8)"
-                      />
-                    )}
-                  </TouchableOpacity>
-                ))}
+            <View style={[styles.menu, { top: menuTop }]}>
+              {MODELS.map((m, i) => (
+                <TouchableOpacity
+                  key={m.id}
+                  style={[
+                    styles.menuItem,
+                    model === m.id && styles.menuItemSelected,
+                    i === MODELS.length - 1 && styles.menuItemLast,
+                  ]}
+                  onPress={() => handleSelect(m.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.menuItemContent}>
+                    <Text style={styles.menuItemName}>{m.name}</Text>
+                    <Text style={styles.menuItemContext}>{m.context}</Text>
+                  </View>
+                  {model === m.id && (
+                    <SymbolView
+                      name="checkmark.circle"
+                      size={20}
+                      tintColor="rgba(255,255,255,0.5)"
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -109,28 +123,59 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
   menu: {
-    backgroundColor: "#2C2C2E",
-    borderRadius: 12,
-    minWidth: 200,
+    position: "absolute",
+    left: 20,
+    right: 20,
+    backgroundColor: Platform.select({
+      ios: "rgba(44,44,46,0.98)",
+      default: "#2C2C2E",
+    }),
+    borderRadius: 14,
     overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+      },
+      default: {
+        elevation: 8,
+      },
+    }),
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.08)",
   },
-  menuItemText: {
+  menuItemSelected: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  menuItemLast: {
+    borderBottomWidth: 0,
+  },
+  menuItemContent: {
+    flex: 1,
+  },
+  menuItemName: {
     color: "#FFFFFF",
     fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: -0.2,
+  },
+  menuItemContext: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 12,
     fontWeight: "500",
+    marginTop: 2,
   },
 });

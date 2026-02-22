@@ -1,11 +1,15 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Keyboard } from "react-native";
 import { useRouter } from "expo-router";
+import { KeyboardStickyView } from "react-native-keyboard-controller";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path, Circle } from "react-native-svg";
 import { useSQLiteContext } from "expo-sqlite";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useModel } from "@/lib/model-context";
 import { createChat } from "@/lib/db";
+
+const COMPOSER_BOTTOM_INSET = 100;
 
 // Anthropic spark/diamond logo
 function SparkLogo({ size = 48 }: { size?: number }) {
@@ -26,6 +30,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const db = useSQLiteContext();
   const { model } = useModel();
+  const insets = useSafeAreaInsets();
 
   async function handleSend(text: string) {
     const chatId = await createChat(db, { model });
@@ -37,14 +42,27 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Centered welcome content */}
-      <View style={styles.welcomeArea}>
-        <SparkLogo size={52} />
-        <Text style={styles.welcomeText}>How can I help you today?</Text>
-      </View>
-
-      {/* Chat input pinned to bottom */}
-      <ChatInput onSend={handleSend} />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        contentInset={{ bottom: COMPOSER_BOTTOM_INSET }}
+        scrollIndicatorInsets={{ bottom: COMPOSER_BOTTOM_INSET }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.spacer} />
+        <Pressable style={styles.welcomeArea} onPress={Keyboard.dismiss}>
+          <SparkLogo size={52} />
+          <Text style={styles.welcomeText}>How can I help you today?</Text>
+        </Pressable>
+        <View style={styles.spacer} />
+      </ScrollView>
+      <KeyboardStickyView
+        style={styles.composerSticky}
+        offset={{ closed: -insets.bottom, opened: 8 }}
+      >
+        <ChatInput onSend={handleSend} />
+      </KeyboardStickyView>
     </View>
   );
 }
@@ -54,13 +72,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1C1C1E",
   },
-  welcomeArea: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  composerSticky: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  spacer: {
+    flex: 1,
+    minHeight: 40,
+  },
+  welcomeArea: {
     alignItems: "center",
     justifyContent: "center",
     gap: 20,
     paddingHorizontal: 32,
-    paddingBottom: 60,
   },
   welcomeText: {
     color: "rgba(255,255,255,0.75)",

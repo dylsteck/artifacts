@@ -1,10 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   TextInput,
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Keyboard,
 } from "react-native";
 import { SymbolView } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,8 +22,20 @@ export function ChatInput({
   disabled = false,
 }: ChatInputProps) {
   const [text, setText] = useState("");
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    const show = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hide = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const subShow = Keyboard.addListener(show, () => setKeyboardVisible(true));
+    const subHide = Keyboard.addListener(hide, () => setKeyboardVisible(false));
+    return () => {
+      subShow.remove();
+      subHide.remove();
+    };
+  }, []);
 
   function handleSend() {
     const trimmed = text.trim();
@@ -33,11 +46,13 @@ export function ChatInput({
 
   const hasText = text.trim().length > 0;
 
+  const bottomPadding = keyboardVisible ? 0 : Math.max(insets.bottom, 16);
+
   return (
     <View
       style={[
         styles.wrapper,
-        { paddingBottom: Math.max(insets.bottom, 16) },
+        { paddingBottom: bottomPadding },
       ]}
     >
       <View style={styles.container}>

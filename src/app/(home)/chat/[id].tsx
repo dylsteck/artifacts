@@ -7,11 +7,11 @@ import {
   Platform,
   Keyboard,
   Pressable,
-  KeyboardAvoidingView,
   Modal,
 } from "react-native";
 import { useLocalSearchParams, useNavigation } from "expo-router";
-import { useHeaderHeight } from "@react-navigation/elements";
+import { KeyboardStickyView } from "react-native-keyboard-controller";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { fetch as expoFetch } from "expo/fetch";
@@ -34,8 +34,10 @@ export default function ChatScreen() {
   const db = useSQLiteContext();
   const { model } = useModel();
   const navigation = useNavigation();
-  const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList>(null);
+
+  const COMPOSER_BOTTOM_INSET = 100;
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const titleSet = useRef(false);
   const initialSent = useRef(false);
@@ -146,46 +148,44 @@ export default function ChatScreen() {
   );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-      keyboardVerticalOffset={headerHeight}
-    >
-      <View style={styles.container}>
-        {/* Messages area: overlay sits inside so it covers FlatList but not ChatInput */}
-        <View style={styles.listWrapper}>
-          <FlatList
-            ref={listRef}
-            data={messages}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode={
-              Platform.OS === "ios" ? "interactive" : "on-drag"
-            }
-            onScrollBeginDrag={dismissKeyboard}
-            ListFooterComponent={
-              <View>
-                {status === "submitted" ? (
-                  <View style={styles.thinkingRow}>
-                    <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
-                  </View>
-                ) : null}
-                <Pressable
-                  style={styles.dismissArea}
-                  onPress={dismissKeyboard}
-                />
+    <View style={styles.container}>
+      <FlatList
+        ref={listRef}
+        data={messages}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        contentInset={{ bottom: COMPOSER_BOTTOM_INSET }}
+        scrollIndicatorInsets={{ bottom: COMPOSER_BOTTOM_INSET }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={
+          Platform.OS === "ios" ? "interactive" : "on-drag"
+        }
+        onScrollBeginDrag={dismissKeyboard}
+        ListFooterComponent={
+          <View>
+            {status === "submitted" ? (
+              <View style={styles.thinkingRow}>
+                <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
               </View>
-            }
-          />
-        </View>
+            ) : null}
+            <Pressable
+              style={styles.dismissArea}
+              onPress={dismissKeyboard}
+            />
+          </View>
+        }
+      />
+      <KeyboardStickyView
+        style={styles.composerSticky}
+        offset={{ closed: -insets.bottom, opened: 8 }}
+      >
         <ChatInput
           onSend={handleSend}
           disabled={isStreaming || status === "submitted"}
         />
-      </View>
+      </KeyboardStickyView>
       {/* Modal overlay: renders on top of everything, tap anywhere to dismiss keyboard */}
       <Modal
         visible={keyboardVisible}
@@ -202,7 +202,7 @@ export default function ChatScreen() {
           }}
         />
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -224,7 +224,10 @@ const styles = StyleSheet.create({
     minHeight: 200,
     flexGrow: 1,
   },
-  listWrapper: {
-    flex: 1,
+  composerSticky: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 });

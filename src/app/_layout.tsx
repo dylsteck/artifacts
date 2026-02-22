@@ -2,6 +2,7 @@ import "@/global.css";
 
 import { Slot } from "expo-router";
 import { Pressable, StyleSheet } from "react-native";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -88,12 +89,14 @@ export { ErrorBoundary } from "expo-router";
 export default function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#1C1C1E" }}>
-      <SQLiteProvider databaseName="artifacts.db" onInit={initDb}>
-        <DrawerProvider>
-          <AppContent />
-          <Drawer />
-        </DrawerProvider>
-      </SQLiteProvider>
+      <KeyboardProvider>
+        <SQLiteProvider databaseName="artifacts.db" onInit={initDb}>
+          <DrawerProvider>
+            <AppContent />
+            <Drawer />
+          </DrawerProvider>
+        </SQLiteProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }
