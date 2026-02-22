@@ -58,7 +58,7 @@ function ChatContent({
   const initialSent = useRef(false);
   const COMPOSER_BOTTOM_INSET = 100;
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     id,
     messages: initialMessages,
     transport: new DefaultChatTransport({
@@ -66,12 +66,16 @@ function ChatContent({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       body: { model },
     }),
+    onError: (err) => {
+      console.error("[LLM] Error:", err);
+    },
     onFinish: async ({ message }) => {
-      const textContent = message.parts
-        .filter((p) => p.type === "text")
-        .map((p) => (p as { type: "text"; text: string }).text)
-        .join("");
-      console.log("[LLM] Complete:", textContent);
+      const textParts = message.parts.filter((p) => p.type === "text");
+      const reasoningParts = message.parts.filter((p) => p.type === "reasoning");
+      const textContent =
+        textParts.map((p) => (p as { type: "text"; text: string }).text).join("") ||
+        reasoningParts.map((p) => (p as { type: "reasoning"; text: string }).text).join("");
+      console.log("[LLM] Complete:", textContent || "(empty)", "parts:", message.parts.length);
       await saveMessage(db, { chatId: id, role: "assistant", content: textContent });
     },
   });
@@ -150,10 +154,15 @@ function ChatContent({
     ({ item, index }: { item: (typeof messages)[0]; index: number }) => {
       const isLast = index === messages.length - 1;
       const role = item.role as "user" | "assistant";
-      const content = item.parts
+      const textContent = item.parts
         .filter((p) => p.type === "text")
         .map((p) => (p as { type: "text"; text: string }).text)
         .join("");
+      const reasoningContent = item.parts
+        .filter((p) => p.type === "reasoning")
+        .map((p) => (p as { type: "reasoning"; text: string }).text)
+        .join("");
+      const content = textContent || reasoningContent;
 
       return (
         <Pressable onPress={dismissKeyboard}>
@@ -201,7 +210,14 @@ function ChatContent({
         onScrollBeginDrag={dismissKeyboard}
         ListFooterComponent={
           <View>
-            {status === "submitted" ? (
+            {error ? (
+              <View style={styles.errorRow}>
+                <Text style={styles.errorText}>
+                  {error instanceof Error ? error.message : String(error)}
+                </Text>
+                <Text style={styles.errorHint}>Check terminal for [LLM] logs</Text>
+              </View>
+            ) : status === "submitted" ? (
               <View style={styles.thinkingRow}>
                 <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
                 <Text style={styles.thinkingText}>Thinking...</Text>
@@ -309,6 +325,19 @@ const styles = StyleSheet.create({
   thinkingText: {
     color: "rgba(255,255,255,0.5)",
     fontSize: 14,
+  },
+  errorRow: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 8,
+  },
+  errorText: {
+    color: "#FF6B6B",
+    fontSize: 14,
+  },
+  errorHint: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 12,
   },
   dismissArea: {
     minHeight: 200,

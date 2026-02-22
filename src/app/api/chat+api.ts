@@ -19,6 +19,7 @@ export async function POST(req: Request) {
   });
 
   return result.toUIMessageStreamResponse({
+    sendReasoning: true,
     headers: {
       "Content-Type": "application/octet-stream",
       "Content-Encoding": "none",
