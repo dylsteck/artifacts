@@ -14,7 +14,7 @@ A React Native AI chat app built with Expo Router and the Vercel AI SDK. Stream 
 ```bash
 bun install
 cp .env.example .env.local
-# Add your ANTHROPIC_API_KEY to .env.local
+# Add your AI_GATEWAY_API_KEY to .env.local (create at vercel.com/dashboard/ai-gateway)
 bun run start
 ```
 

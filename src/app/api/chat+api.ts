@@ -1,16 +1,15 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
-import { createAnthropic } from "@ai-sdk/anthropic";
+
+function toGatewayModel(id: string): string {
+  return `anthropic/${id.replace(/-(\d)-(\d)(?=-|$)/g, ".$1.$2")}`;
+}
 
 export async function POST(req: Request) {
   const { messages, model }: { messages: UIMessage[]; model: string } =
     await req.json();
 
-  const anthropic = createAnthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  });
-
   const result = streamText({
-    model: anthropic(model),
+    model: toGatewayModel(model),
     messages: await convertToModelMessages(messages),
     maxOutputTokens: 4096,
   });

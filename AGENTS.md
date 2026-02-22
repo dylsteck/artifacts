@@ -147,7 +147,7 @@ sendMessage({ parts: [...] });           // explicit parts
 export async function POST(req: Request) {
   const { messages, model } = await req.json();
   const result = streamText({
-    model: createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })(model),
+    model: toGatewayModel(model), // e.g. anthropic/claude-sonnet-4.6
     messages: await convertToModelMessages(messages),  // async in v6!
     maxOutputTokens: 4096,
   });
@@ -340,12 +340,12 @@ const swipeGesture = Gesture.Pan()
 
 | Variable | Where | Purpose |
 |----------|-------|---------|
-| `ANTHROPIC_API_KEY` | `.env.local` (server only) | Anthropic API authentication |
+| `AI_GATEWAY_API_KEY` | `.env.local` (server only) | Vercel AI Gateway authentication |
 | `EXPO_PUBLIC_API_BASE_URL` | `.env.local` (client) | Base URL for API calls (empty = same origin) |
 
 Set in `.env.local`:
 ```
-ANTHROPIC_API_KEY=sk-ant-YOUR_KEY_HERE
+AI_GATEWAY_API_KEY=your_api_key_here
 # EXPO_PUBLIC_API_BASE_URL=http://localhost:3000
 ```
 
