@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
+import { SymbolView } from "expo-symbols";
+import { useRouter } from "expo-router";
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -20,6 +22,7 @@ const EDGE_HIT_SLOP = 30;
 
 export function Drawer() {
   const { isOpen, open, close, animProgress } = useDrawer();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const isOpenShared = useSharedValue(false);
@@ -89,36 +92,17 @@ export function Drawer() {
           {/* Nav items */}
           <View style={styles.navSection}>
             <View style={styles.navItem}>
-              <svg
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M20 2H4C2.9 2 2 2.9 2 4v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"
-                  fill="rgba(255,255,255,0.85)"
-                />
-              </svg>
+              <SymbolView name="bubble.left.fill" size={20} tintColor="rgba(255,255,255,0.85)" />
               <Text style={styles.navLabel}>Chat</Text>
             </View>
 
-            <View style={styles.navItem}>
-              <svg
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect x="3" y="3" width="8" height="8" rx="1.5" fill="rgba(255,255,255,0.85)" />
-                <rect x="13" y="3" width="8" height="8" rx="1.5" fill="rgba(255,255,255,0.85)" />
-                <rect x="3" y="13" width="8" height="8" rx="1.5" fill="rgba(255,255,255,0.85)" />
-                <rect x="13" y="13" width="8" height="8" rx="1.5" fill="rgba(255,255,255,0.85)" />
-              </svg>
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => { router.push("/artifacts"); close(); }}
+            >
+              <SymbolView name="square.grid.2x2.fill" size={20} tintColor="rgba(255,255,255,0.85)" />
               <Text style={styles.navLabel}>Artifacts</Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Recents */}
@@ -135,19 +119,8 @@ export function Drawer() {
               <Text style={styles.avatarText}>D</Text>
             </View>
             <Text style={styles.profileName}>Dylan Steck</Text>
-            <TouchableOpacity style={styles.newChatButton}>
-              <svg
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M19 11H13V5H11V11H5V13H11V19H13V13H19V11Z"
-                  fill="rgba(255,255,255,0.9)"
-                />
-              </svg>
+            <TouchableOpacity style={styles.newChatButton} onPress={() => { router.push("/"); close(); }}>
+              <SymbolView name="square.and.pencil" size={18} tintColor="rgba(255,255,255,0.9)" />
             </TouchableOpacity>
           </View>
         </Animated.View>

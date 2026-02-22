@@ -43,7 +43,17 @@ export default function Layout() {
               <OptionsButton />
             </div>
           ),
-
+        }}
+      />
+      <Stack.Screen
+        name="artifacts"
+        options={{
+          title: "Artifacts",
+          headerLeft: () => (
+            <div className="web:px-4">
+              <OptionsButton />
+            </div>
+          ),
           headerRight: () => (
             <div className="web:px-4">
               <LaunchButton />
