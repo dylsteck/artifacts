@@ -9,6 +9,7 @@
         "@ai-sdk/react": "^3.0.99",
         "@bacons/apple-colors": "^0.0.8",
         "@expo/html-elements": "^0.13.6",
+        "@react-navigation/elements": "^2.9.5",
         "ai": "^6.0.97",
         "clsx": "^2.1.1",
         "expo": "^54.0.1",

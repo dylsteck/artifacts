@@ -1,11 +1,17 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback, useState } from "react";
 import {
   View,
   FlatList,
   StyleSheet,
   ActivityIndicator,
+  Platform,
+  Keyboard,
+  Pressable,
+  KeyboardAvoidingView,
+  Modal,
 } from "react-native";
 import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useHeaderHeight } from "@react-navigation/elements";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { fetch as expoFetch } from "expo/fetch";
@@ -28,7 +34,9 @@ export default function ChatScreen() {
   const db = useSQLiteContext();
   const { model } = useModel();
   const navigation = useNavigation();
+  const headerHeight = useHeaderHeight();
   const listRef = useRef<FlatList>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const titleSet = useRef(false);
   const initialSent = useRef(false);
 
@@ -89,6 +97,18 @@ export default function ChatScreen() {
     }
   }, [messages.length]);
 
+  // Track keyboard visibility for tap-to-dismiss overlay
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   const handleSend = useCallback(
     async (text: string) => {
       await saveMessage(db, { chatId: id, role: "user", content: text });
@@ -98,6 +118,10 @@ export default function ChatScreen() {
   );
 
   const isStreaming = status === "streaming";
+
+  const dismissKeyboard = useCallback(() => {
+    Keyboard.dismiss();
+  }, []);
 
   const renderItem = useCallback(
     ({ item, index }: { item: (typeof messages)[0]; index: number }) => {
@@ -109,38 +133,76 @@ export default function ChatScreen() {
         .join("");
 
       return (
-        <MessageBubble
-          role={role}
-          content={content}
-          isStreaming={isStreaming && isLast && role === "assistant"}
-        />
+        <Pressable onPress={dismissKeyboard}>
+          <MessageBubble
+            role={role}
+            content={content}
+            isStreaming={isStreaming && isLast && role === "assistant"}
+          />
+        </Pressable>
       );
     },
-    [messages, isStreaming]
+    [messages, isStreaming, dismissKeyboard]
   );
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        ref={listRef}
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListFooterComponent={
-          status === "submitted" ? (
-            <View style={styles.thinkingRow}>
-              <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
-            </View>
-          ) : null
-        }
-      />
-      <ChatInput
-        onSend={handleSend}
-        disabled={isStreaming || status === "submitted"}
-      />
-    </View>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+      keyboardVerticalOffset={headerHeight}
+    >
+      <View style={styles.container}>
+        {/* Messages area: overlay sits inside so it covers FlatList but not ChatInput */}
+        <View style={styles.listWrapper}>
+          <FlatList
+            ref={listRef}
+            data={messages}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={
+              Platform.OS === "ios" ? "interactive" : "on-drag"
+            }
+            onScrollBeginDrag={dismissKeyboard}
+            ListFooterComponent={
+              <View>
+                {status === "submitted" ? (
+                  <View style={styles.thinkingRow}>
+                    <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
+                  </View>
+                ) : null}
+                <Pressable
+                  style={styles.dismissArea}
+                  onPress={dismissKeyboard}
+                />
+              </View>
+            }
+          />
+        </View>
+        <ChatInput
+          onSend={handleSend}
+          disabled={isStreaming || status === "submitted"}
+        />
+      </View>
+      {/* Modal overlay: renders on top of everything, tap anywhere to dismiss keyboard */}
+      <Modal
+        visible={keyboardVisible}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        onRequestClose={dismissKeyboard}
+      >
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => {
+            setKeyboardVisible(false);
+            dismissKeyboard();
+          }}
+        />
+      </Modal>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -150,11 +212,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#1C1C1E",
   },
   listContent: {
+    flexGrow: 1,
     paddingTop: 16,
     paddingBottom: 8,
   },
   thinkingRow: {
     paddingHorizontal: 20,
     paddingVertical: 12,
+  },
+  dismissArea: {
+    minHeight: 200,
+    flexGrow: 1,
+  },
+  listWrapper: {
+    flex: 1,
   },
 });

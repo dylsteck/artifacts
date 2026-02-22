@@ -53,7 +53,7 @@ function ToolCard({
     <div
       className="flex items-center flex-row gap-2 border border-gray-600 dark:border-gray-300 p-4 rounded-2xl"
       style={{
-        borderCurve: "continuous",
+        borderRadius: 16,
       }}
     >
       {icon}
@@ -72,7 +72,7 @@ function Globe() {
       height="24"
       viewBox="0 0 24 24"
       fill="none"
-      stroke={AC.label}
+      stroke={String(AC.label)}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -92,7 +92,7 @@ function Rocket() {
       height="24"
       viewBox="0 0 24 24"
       fill="none"
-      stroke={AC.label}
+      stroke={String(AC.label)}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -113,7 +113,7 @@ function Sparkle() {
       height="24"
       viewBox="0 0 24 24"
       fill="none"
-      stroke={AC.label}
+      stroke={String(AC.label)}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -134,7 +134,7 @@ function MultiTool() {
       height="24"
       viewBox="0 0 24 24"
       fill="none"
-      stroke={AC.label}
+      stroke={String(AC.label)}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"

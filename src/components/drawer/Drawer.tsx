@@ -12,11 +12,8 @@ import { useRouter } from "expo-router";
 import Animated, {
   useAnimatedStyle,
   withTiming,
-  runOnJS,
-  useSharedValue,
   Easing,
 } from "react-native-reanimated";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSQLiteContext } from "expo-sqlite";
 import { useDrawer, DRAWER_WIDTH } from "./DrawerContext";
@@ -24,17 +21,12 @@ import { getRecentChats, deleteChat } from "@/lib/db";
 
 type Chat = { id: string; title: string; model: string; updated_at: number };
 
-const EDGE_HIT_SLOP = 30;
-
 export function Drawer() {
-  const { isOpen, open, close, animProgress } = useDrawer();
+  const { isOpen, close, animProgress } = useDrawer();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const db = useSQLiteContext();
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
-
-  const isOpenShared = useSharedValue(false);
-  const startProgress = useSharedValue(0);
 
   // Load recent chats whenever drawer opens
   useEffect(() => {
@@ -42,7 +34,6 @@ export function Drawer() {
       getRecentChats(db).then(setRecentChats);
     }
 
-    isOpenShared.value = isOpen;
     if (isOpen) {
       animProgress.value = withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) });
     } else {
@@ -69,124 +60,95 @@ export function Drawer() {
     transform: [{ translateX: (animProgress.value - 1) * DRAWER_WIDTH }],
   }));
 
-  const panGesture = Gesture.Pan()
-    .activeOffsetX([-8, 8])
-    .onStart((event) => {
-      startProgress.value = animProgress.value;
-      isOpenShared.value = animProgress.value > 0.5;
-    })
-    .onUpdate((event) => {
-      const currently = isOpenShared.value;
-      if (!currently && event.x > EDGE_HIT_SLOP && event.translationX <= 0) return;
-      const newProgress = startProgress.value + event.translationX / DRAWER_WIDTH;
-      animProgress.value = Math.max(0, Math.min(1, newProgress));
-    })
-    .onEnd((event) => {
-      const shouldOpen =
-        event.velocityX > 500 ||
-        (event.velocityX > -500 && animProgress.value > 0.4);
-
-      if (shouldOpen) {
-        animProgress.value = withTiming(1, { duration: 280, easing: Easing.out(Easing.cubic) });
-        runOnJS(open)();
-      } else {
-        animProgress.value = withTiming(0, { duration: 260, easing: Easing.out(Easing.cubic) });
-        runOnJS(close)();
-      }
-    });
-
   return (
-    <GestureDetector gesture={panGesture}>
-      <View
-        style={[StyleSheet.absoluteFill, { zIndex: 999 }]}
-        pointerEvents="box-none"
+    <View
+      style={[StyleSheet.absoluteFill, { zIndex: 999 }]}
+      pointerEvents="box-none"
+    >
+      <Animated.View
+        style={[
+          styles.sidebar,
+          { paddingTop: insets.top, paddingBottom: Math.max(insets.bottom, 16) },
+          drawerStyle,
+        ]}
+        pointerEvents={isOpen ? "auto" : "none"}
       >
-        {/* Sidebar panel — always rendered, translated offscreen when closed */}
-        <Animated.View
-          style={[
-            styles.sidebar,
-            { paddingTop: insets.top, paddingBottom: Math.max(insets.bottom, 16) },
-            drawerStyle,
-          ]}
-          pointerEvents={isOpen ? "auto" : "none"}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.brandTitle}>Artifacts</Text>
-          </View>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.brandTitle}>Artifacts</Text>
+        </View>
 
-          {/* Nav items */}
-          <View style={styles.navSection}>
+        {/* Nav items */}
+        <View style={styles.navSection}>
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => { router.push("/"); close(); }}
+          >
+            <SymbolView name="bubble.left.fill" size={20} tintColor="rgba(255,255,255,0.85)" />
+            <Text style={styles.navLabel}>Chat</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => { router.push("/artifacts"); close(); }}
+          >
+            <SymbolView name="square.grid.2x2.fill" size={20} tintColor="rgba(255,255,255,0.85)" />
+            <Text style={styles.navLabel}>Artifacts</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Recents */}
+        <View style={styles.recentsSection}>
+          <Text style={styles.recentsLabel}>RECENTS</Text>
+        </View>
+
+        <ScrollView style={styles.recentsList} showsVerticalScrollIndicator={false}>
+          {recentChats.length === 0 && (
+            <Text style={styles.emptyText}>No recent chats</Text>
+          )}
+          {recentChats.map((chat) => (
             <TouchableOpacity
-              style={styles.navItem}
-              onPress={() => { router.push("/"); close(); }}
+              key={chat.id}
+              style={styles.chatItem}
+              onPress={() => {
+                router.push({ pathname: "/chat/[id]", params: { id: chat.id } });
+                close();
+              }}
+              activeOpacity={0.7}
             >
-              <SymbolView name="bubble.left.fill" size={20} tintColor="rgba(255,255,255,0.85)" />
-              <Text style={styles.navLabel}>Chat</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.navItem}
-              onPress={() => { router.push("/artifacts"); close(); }}
-            >
-              <SymbolView name="square.grid.2x2.fill" size={20} tintColor="rgba(255,255,255,0.85)" />
-              <Text style={styles.navLabel}>Artifacts</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Recents */}
-          <View style={styles.recentsSection}>
-            <Text style={styles.recentsLabel}>RECENTS</Text>
-          </View>
-
-          <ScrollView style={styles.recentsList} showsVerticalScrollIndicator={false}>
-            {recentChats.length === 0 && (
-              <Text style={styles.emptyText}>No recent chats</Text>
-            )}
-            {recentChats.map((chat) => (
+              <Text style={styles.chatTitle} numberOfLines={1}>
+                {chat.title}
+              </Text>
               <TouchableOpacity
-                key={chat.id}
-                style={styles.chatItem}
-                onPress={() => {
-                  router.push({ pathname: "/chat/[id]", params: { id: chat.id } });
-                  close();
-                }}
-                activeOpacity={0.7}
+                onPress={() => handleDeleteChat(chat.id)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.deleteButton}
               >
-                <Text style={styles.chatTitle} numberOfLines={1}>
-                  {chat.title}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => handleDeleteChat(chat.id)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  style={styles.deleteButton}
-                >
-                  <SymbolView
-                    name="trash"
-                    size={14}
-                    tintColor="rgba(255,255,255,0.3)"
-                  />
-                </TouchableOpacity>
+                <SymbolView
+                  name="trash"
+                  size={14}
+                  tintColor="rgba(255,255,255,0.3)"
+                />
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {/* Bottom: profile + new chat */}
-          <View style={styles.bottomRow}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>D</Text>
-            </View>
-            <Text style={styles.profileName}>Dylan Steck</Text>
-            <TouchableOpacity
-              style={styles.newChatButton}
-              onPress={() => { router.push("/"); close(); }}
-            >
-              <SymbolView name="square.and.pencil" size={18} tintColor="rgba(255,255,255,0.9)" />
             </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Bottom: profile + new chat */}
+        <View style={styles.bottomRow}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>D</Text>
           </View>
-        </Animated.View>
-      </View>
-    </GestureDetector>
+          <Text style={styles.profileName}>Dylan Steck</Text>
+          <TouchableOpacity
+            style={styles.newChatButton}
+            onPress={() => { router.push("/"); close(); }}
+          >
+            <SymbolView name="square.and.pencil" size={18} tintColor="rgba(255,255,255,0.9)" />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 

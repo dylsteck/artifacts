@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
-  KeyboardAvoidingView,
 } from "react-native";
 import { SymbolView } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,7 +17,7 @@ type ChatInputProps = {
 
 export function ChatInput({
   onSend,
-  placeholder = "Chat with Claude",
+  placeholder = "Chat",
   disabled = false,
 }: ChatInputProps) {
   const [text, setText] = useState("");
@@ -35,17 +34,13 @@ export function ChatInput({
   const hasText = text.trim().length > 0;
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 0}
+    <View
+      style={[
+        styles.wrapper,
+        { paddingBottom: Math.max(insets.bottom, 16) },
+      ]}
     >
-      <View
-        style={[
-          styles.wrapper,
-          { paddingBottom: Math.max(insets.bottom, 16) },
-        ]}
-      >
-        <View style={styles.container}>
+      <View style={styles.container}>
           {/* Top: Text Input */}
           <TextInput
             ref={inputRef}
@@ -106,8 +101,7 @@ export function ChatInput({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

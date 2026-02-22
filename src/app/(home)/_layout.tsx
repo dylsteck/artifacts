@@ -1,6 +1,5 @@
 import { Stack } from "expo-router";
 import { TouchableOpacity } from "react-native";
-import * as AC from "@bacons/apple-colors";
 import { useDrawer } from "@/components/drawer/DrawerContext";
 import { ModelSelector } from "@/components/chat/ModelSelector";
 import { ModelProvider } from "@/lib/model-context";
@@ -17,7 +16,8 @@ function OptionsButton() {
         viewBox="0 0 22 16"
         width="22"
         height="16"
-        fill={String(AC.label)}
+        fill="currentColor"
+        style={{ color: "#ffffff" }}
         xmlns="http://www.w3.org/2000/svg"
       >
         <rect y="0" width="22" height="2" rx="1" />
@@ -37,6 +37,7 @@ export default function Layout() {
         <Stack.Screen
           name="index"
           options={{
+            title: "",
             headerTitle: () => <ModelSelector />,
             headerLeft: () => (
               <div className="web:px-4">
@@ -60,6 +61,7 @@ export default function Layout() {
           name="chat/[id]"
           options={{
             title: "Chat",
+            headerTitle: () => <ModelSelector />,
             headerBackButtonDisplayMode: "minimal",
           }}
         />

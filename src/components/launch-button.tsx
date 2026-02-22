@@ -10,7 +10,7 @@ export function LaunchButton() {
     >
       <svg
         role="img"
-        fill={AC.label}
+        fill={String(AC.label)}
         viewBox="0 0 24 24"
         width="22"
         height="24"

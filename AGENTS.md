@@ -284,6 +284,56 @@ Fetches fresh data every time drawer opens — no stale cache.
 fill={String(AC.label)}   // ✅ correct for web SVG fill
 ```
 
+### Keyboard Handling for Chat Inputs
+
+```typescript
+import { KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, LayoutAnimation, Platform } from "react-native";
+
+// Use behavior="padding" for iOS - better than "height" for chat inputs
+<KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={0}>
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    <View>
+      <FlatList ... />
+      <ChatInput />
+    </View>
+  </TouchableWithoutFeedback>
+</KeyboardAvoidingView>
+```
+
+For smooth keyboard animations:
+```typescript
+useEffect(() => {
+  const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+  const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+  const showListener = Keyboard.addListener(showEvent, (e) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setKeyboardHeight(e.endCoordinates.height - insets.bottom);
+  });
+
+  const hideListener = Keyboard.addListener(hideEvent, () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setKeyboardHeight(0);
+  });
+
+  return () => { showListener.remove(); hideListener.remove(); };
+}, []);
+```
+
+### Swipe from Edge to Open Drawer
+
+```typescript
+const EDGE_ZONE = 60; // px from left edge that triggers open
+
+const swipeGesture = Gesture.Pan()
+  .activeOffsetX([-10, 10])
+  .onStart((event) => {
+    // Only trigger from left edge zone when drawer is closed
+    if (!drawerOpen && event.x > EDGE_ZONE) return;
+    // ... handle gesture
+  });
+```
+
 ---
 
 ## 8. Environment Variables
