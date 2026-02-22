@@ -4,10 +4,15 @@ import { AppleStackPreset } from "@/lib/utils";
 import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { TouchableOpacity } from "react-native";
 import * as AC from "@bacons/apple-colors";
+import { useDrawer } from "@/components/drawer/DrawerContext";
 
 function OptionsButton() {
+  const { open } = useDrawer();
   return (
-    <TouchableOpacity className="w-10 h-10 items-center justify-center">
+    <TouchableOpacity
+      onPress={open}
+      className="w-10 h-10 items-center justify-center"
+    >
       <svg
         viewBox="0 0 22 16"
         width="22"
