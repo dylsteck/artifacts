@@ -2,6 +2,26 @@ import { Stack } from "expo-router";
 import { LaunchButton } from "@/components/launch-button";
 import { AppleStackPreset } from "@/lib/utils";
 import { isLiquidGlassAvailable } from "expo-glass-effect";
+import { TouchableOpacity } from "react-native";
+import * as AC from "@bacons/apple-colors";
+
+function OptionsButton() {
+  return (
+    <TouchableOpacity className="w-10 h-10 items-center justify-center">
+      <svg
+        viewBox="0 0 22 16"
+        width="22"
+        height="16"
+        fill={AC.label}
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect y="0" width="22" height="2" rx="1" />
+        <rect y="7" width="22" height="2" rx="1" />
+        <rect y="14" width="22" height="2" rx="1" />
+      </svg>
+    </TouchableOpacity>
+  );
+}
 
 export { ErrorBoundary } from "expo-router";
 
@@ -12,6 +32,12 @@ export default function Layout() {
         name="index"
         options={{
           title: "ACME",
+
+          headerLeft: () => (
+            <div className="web:px-4">
+              <OptionsButton />
+            </div>
+          ),
 
           headerRight: () => (
             <div className="web:px-4">
