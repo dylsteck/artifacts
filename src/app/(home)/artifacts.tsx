@@ -6,9 +6,12 @@ import { Pressable } from "react-native";
 
 export default function Artifacts() {
   return (
-    <Body contentContainerClassName="px-5 pb-5 gap-2">
+    <Body
+      style={{ flex: 1, backgroundColor: "#1C1C1E" }}
+      contentContainerClassName="px-5 pb-5 gap-2"
+    >
       <header className="text-center flex flex-col gap-2">
-        <p className="text-gray-600 dark:text-gray-300 text-lg">
+        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 17, textAlign: "center", lineHeight: 24 }}>
           Building native apps with familiar web syntax for markup, and native
           views for layouts and gestures.
         </p>
@@ -33,7 +36,10 @@ function Item({ src, children }: { src?: string; children?: React.ReactNode }) {
     <Link href="/modal" asChild style={{ borderRadius: 12 }}>
       <Link.Trigger>
         <Pressable>
-          <article className="flex-1 rounded-xl overflow-hidden items-stretch md:flex-row border-[0.5px] bg-slate-100 border-slate-300 dark:bg-black dark:border-gray-700">
+          <article
+            className="flex-1 rounded-xl overflow-hidden items-stretch md:flex-row"
+            style={{ backgroundColor: "#2C2C2E", borderWidth: 0.5, borderColor: "#38383A" }}
+          >
             <div className="flex-1 min-h-[240px]">
               <Image style={{ flex: 1 }} source={src} />
               <div className="absolute top-2 right-2">
@@ -42,14 +48,14 @@ function Item({ src, children }: { src?: string; children?: React.ReactNode }) {
             </div>
 
             <main className="flex-1 md:p-8 p-8 text-center md:text-left space-y-4">
-              <p className="text-lg font-medium dark:text-slate-300">
+              <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 17, fontWeight: "500" }}>
                 {children}
               </p>
               <article className="font-medium">
-                <p className="text-sky-500 dark:text-sky-400 my-0">
+                <p style={{ color: "#60A5FA", marginTop: 0, marginBottom: 0 }}>
                   Evan Bacon
                 </p>
-                <p className="text-slate-700 dark:text-slate-500 my-1">
+                <p style={{ color: "rgba(255,255,255,0.4)", marginTop: 4, marginBottom: 0 }}>
                   Engineer, Expo
                 </p>
               </article>

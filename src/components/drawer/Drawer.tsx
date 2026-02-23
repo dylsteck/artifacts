@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { SymbolView } from "expo-symbols";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -24,6 +24,7 @@ type Chat = { id: string; title: string; model: string; updated_at: number };
 export function Drawer() {
   const { isOpen, close, animProgress } = useDrawer();
   const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const db = useSQLiteContext();
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
@@ -50,6 +51,10 @@ export function Drawer() {
         onPress: async () => {
           await deleteChat(db, chatId);
           setRecentChats((prev) => prev.filter((c) => c.id !== chatId));
+          if (pathname === `/chat/${chatId}`) {
+            router.replace("/");
+            close();
+          }
         },
       },
     ]);
@@ -99,13 +104,10 @@ export function Drawer() {
 
         {/* Recents */}
         <View style={styles.recentsSection}>
-          <Text style={styles.recentsLabel}>RECENTS</Text>
+          <Text style={styles.recentsLabel}>Recents</Text>
         </View>
 
         <ScrollView style={styles.recentsList} showsVerticalScrollIndicator={false}>
-          {recentChats.length === 0 && (
-            <Text style={styles.emptyText}>No recent chats</Text>
-          )}
           {recentChats.map((chat) => (
             <TouchableOpacity
               key={chat.id}
@@ -204,7 +206,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.35)",
     fontSize: 11,
     fontWeight: "600",
-    letterSpacing: 0.8,
+    letterSpacing: 0.2,
   },
   recentsList: {
     flex: 1,

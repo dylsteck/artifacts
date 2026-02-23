@@ -10,7 +10,7 @@ import {
   Pressable,
   Modal,
 } from "react-native";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useChat, type UIMessage } from "@ai-sdk/react";
@@ -50,7 +50,6 @@ function ChatContent({
   db: ReturnType<typeof useSQLiteContext>;
   model: string;
 }) {
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -58,11 +57,13 @@ function ChatContent({
   const initialSent = useRef(false);
   const COMPOSER_BOTTOM_INSET = 100;
 
+  const apiUrl = generateAPIUrl("/api/chat");
+
   const { messages, sendMessage, status, error } = useChat({
     id,
     messages: initialMessages,
     transport: new DefaultChatTransport({
-      api: generateAPIUrl("/api/chat"),
+      api: apiUrl,
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       body: { model },
     }),
@@ -83,12 +84,12 @@ function ChatContent({
   useEffect(() => {
     if (initialMessageToSend && !initialSent.current) {
       initialSent.current = true;
+      console.log("[Chat] Sending initial message to:", apiUrl, "model:", model);
       saveMessage(db, { chatId: id, role: "user", content: initialMessageToSend });
       sendMessage({ text: initialMessageToSend });
     }
   }, [initialMessageToSend, id, db, sendMessage]);
 
-  // Update chat title in DB for drawer (don't change header - keeps "Chat")
   useEffect(() => {
     if (!titleSet.current && messages.length > 0) {
       const firstUser = messages.find((m) => m.role === "user");
@@ -105,14 +106,14 @@ function ChatContent({
     }
   }, [messages]);
 
-  // Scroll to bottom on new messages
+  // Scroll to newest message (offset 0 = bottom in inverted FlatList)
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
+      setTimeout(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }), 80);
     }
   }, [messages.length]);
 
-  // Log assistant message updates as they stream (for debugging)
+  // Log streaming chunks
   useEffect(() => {
     const last = messages[messages.length - 1];
     if (last?.role === "assistant") {
@@ -120,11 +121,10 @@ function ChatContent({
         .filter((p) => p.type === "text")
         .map((p) => (p as { type: "text"; text: string }).text)
         .join("");
-      if (text) console.log("[LLM] Stream:", text);
+      if (text) console.log("[LLM] Stream:", text.slice(-80));
     }
   }, [messages]);
 
-  // Track keyboard visibility for tap-to-dismiss overlay
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
@@ -150,9 +150,10 @@ function ChatContent({
     Keyboard.dismiss();
   }, []);
 
+  // inverted FlatList: index 0 = newest message (rendered at bottom)
   const renderItem = useCallback(
     ({ item, index }: { item: (typeof messages)[0]; index: number }) => {
-      const isLast = index === messages.length - 1;
+      const isLast = index === 0;
       const role = item.role as "user" | "assistant";
       const textContent = item.parts
         .filter((p) => p.type === "text")
@@ -181,34 +182,24 @@ function ChatContent({
     <View style={styles.container}>
       <FlatList
         ref={listRef}
-        data={messages}
+        inverted
+        data={[...messages].reverse()}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          {
-            paddingTop: insets.top + 56,
-          },
-          Platform.OS === "ios" ? undefined : { paddingBottom: COMPOSER_BOTTOM_INSET },
+          // inverted: paddingTop = physical bottom (chat input + safe area)
+          //           paddingBottom = physical top (nav bar space)
+          { paddingTop: COMPOSER_BOTTOM_INSET + insets.bottom },
+          { paddingBottom: insets.top + 56 },
         ]}
-        contentInset={
-          Platform.OS === "ios"
-            ? { top: insets.top + 56, bottom: COMPOSER_BOTTOM_INSET }
-            : undefined
-        }
-        scrollIndicatorInsets={
-          Platform.OS === "ios"
-            ? { top: insets.top + 56, bottom: COMPOSER_BOTTOM_INSET }
-            : undefined
-        }
         style={styles.list}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode={
-          Platform.OS === "ios" ? "interactive" : "on-drag"
-        }
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         onScrollBeginDrag={dismissKeyboard}
-        ListFooterComponent={
+        ListHeaderComponent={
+          // With inverted, ListHeaderComponent appears at the BOTTOM (after newest msg)
           <View>
             {error ? (
               <View style={styles.errorRow}>
@@ -223,10 +214,6 @@ function ChatContent({
                 <Text style={styles.thinkingText}>Thinking...</Text>
               </View>
             ) : null}
-            <Pressable
-              style={styles.dismissArea}
-              onPress={dismissKeyboard}
-            />
           </View>
         }
       />
@@ -239,7 +226,6 @@ function ChatContent({
           disabled={isStreaming || status === "submitted"}
         />
       </KeyboardStickyView>
-      {/* Modal overlay: renders on top of everything, tap anywhere to dismiss keyboard */}
       <Modal
         visible={keyboardVisible}
         transparent
@@ -313,7 +299,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-    minHeight: 200,
   },
   thinkingRow: {
     flexDirection: "row",
@@ -338,10 +323,6 @@ const styles = StyleSheet.create({
   errorHint: {
     color: "rgba(255,255,255,0.5)",
     fontSize: 12,
-  },
-  dismissArea: {
-    minHeight: 200,
-    flexGrow: 1,
   },
   composerSticky: {
     position: "absolute",

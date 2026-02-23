@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, type ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { useSQLiteContext } from "expo-sqlite";
+import { getSetting, setSetting } from "@/lib/db";
 
 export const MODELS = [
   {
@@ -28,8 +30,31 @@ type ModelContextType = {
 
 const ModelContext = createContext<ModelContextType>(null!);
 
+const SETTING_KEY = "selectedModel";
+
 export function ModelProvider({ children }: { children: ReactNode }) {
-  const [model, setModel] = useState<ModelId>("claude-sonnet-4-6");
+  const db = useSQLiteContext();
+  const [model, setModelState] = useState<ModelId>("claude-sonnet-4-6");
+
+  // Load persisted model on mount
+  useEffect(() => {
+    getSetting(db, SETTING_KEY)
+      .then((saved) => {
+        if (saved && MODELS.some((m) => m.id === saved)) {
+          setModelState(saved as ModelId);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const setModel = useCallback(
+    (newModel: ModelId) => {
+      setModelState(newModel);
+      setSetting(db, SETTING_KEY, newModel).catch(console.error);
+    },
+    [db]
+  );
+
   const modelInfo = MODELS.find((m) => m.id === model) ?? MODELS[0];
 
   return (

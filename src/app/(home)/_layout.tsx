@@ -50,6 +50,7 @@ export default function Layout() {
           name="artifacts"
           options={{
             title: "Artifacts",
+            contentStyle: { backgroundColor: "#1C1C1E" },
             headerLeft: () => (
               <div className="web:px-4">
                 <OptionsButton />
@@ -62,6 +63,11 @@ export default function Layout() {
           options={{
             title: "Chat",
             headerTitle: () => <ModelSelector />,
+            headerLeft: () => (
+              <div className="web:px-4">
+                <OptionsButton />
+              </div>
+            ),
             headerBackButtonDisplayMode: "minimal",
             headerLargeTitle: false,
           }}

@@ -20,7 +20,34 @@ export async function initDb(db: SQLiteDatabase) {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY NOT NULL,
+      value TEXT NOT NULL
+    );
   `);
+}
+
+export async function getSetting(
+  db: SQLiteDatabase,
+  key: string
+): Promise<string | null> {
+  const row = await db.getFirstAsync<{ value: string }>(
+    "SELECT value FROM settings WHERE key = ?",
+    [key]
+  );
+  return row?.value ?? null;
+}
+
+export async function setSetting(
+  db: SQLiteDatabase,
+  key: string,
+  value: string
+) {
+  await db.runAsync(
+    "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+    [key, value]
+  );
 }
 
 export async function createChat(

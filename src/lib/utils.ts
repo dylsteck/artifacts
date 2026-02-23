@@ -36,20 +36,31 @@ export const AppleStackPreset: NativeStackNavigationOptions =
           backgroundColor: "transparent",
         },
         headerTitleStyle: {
-          color: AC.label as any,
+          color: "#FFFFFF",
         },
+        headerLargeTitleStyle: {
+          color: "#FFFFFF",
+        },
+        headerTintColor: "#FFFFFF",
         headerLargeTitle: true,
         headerBlurEffect: "none",
         headerBackButtonDisplayMode: "minimal",
       }
     : {
         headerTransparent: true,
-        headerShadowVisible: true,
+        headerShadowVisible: false,
         headerLargeTitleShadowVisible: false,
         headerLargeStyle: {
           backgroundColor: "transparent",
         },
+        headerTitleStyle: {
+          color: "#FFFFFF",
+        },
+        headerLargeTitleStyle: {
+          color: "#FFFFFF",
+        },
+        headerTintColor: "#FFFFFF",
         headerLargeTitle: true,
-        headerBlurEffect: "systemChromeMaterial",
-        headerBackButtonDisplayMode: "default",
+        headerBlurEffect: "none",
+        headerBackButtonDisplayMode: "minimal",
       };
