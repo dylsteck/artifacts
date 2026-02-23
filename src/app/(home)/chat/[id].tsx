@@ -12,6 +12,7 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+import { ThinkingDropdown } from "@/components/chat/ThinkingDropdown";
 import { SymbolView } from "expo-symbols";
 import { useLocalSearchParams } from "expo-router";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
@@ -242,8 +243,7 @@ function ChatContent({
               </View>
             ) : status === "submitted" ? (
               <View style={styles.thinkingRow}>
-                <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
-                <Text style={styles.thinkingText}>Thinking...</Text>
+                <ThinkingDropdown reasoning="" isStreaming={true} />
               </View>
             ) : null}
           </View>
@@ -344,15 +344,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   thinkingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
-  },
-  thinkingText: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 14,
   },
   errorRow: {
     paddingHorizontal: 20,

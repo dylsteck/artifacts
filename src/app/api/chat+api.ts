@@ -12,6 +12,8 @@ const GATEWAY_MODELS: Record<string, string> = {
   "grok-3-mini": "xai/grok-3-mini",
 };
 
+const XAI_MODELS = ["grok-3", "grok-3-mini"] as const;
+
 function toGatewayModelId(id: string): string {
   return GATEWAY_MODELS[id] ?? id;
 }
@@ -29,6 +31,17 @@ export async function POST(req: Request) {
       model: gateway(gatewayModelId),
       messages: await convertToModelMessages(messages),
       maxOutputTokens: 4096,
+      ...(XAI_MODELS.includes(model as (typeof XAI_MODELS)[number]) && {
+        providerOptions: {
+          xai: {
+            searchParameters: {
+              mode: "on",
+              returnCitations: true,
+              sources: [{ type: "web" }, { type: "x" }],
+            },
+          },
+        },
+      }),
     });
 
     return result.toUIMessageStreamResponse({

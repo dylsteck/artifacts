@@ -9,6 +9,7 @@ import {
 import { SymbolView } from "expo-symbols";
 import { useRouter, usePathname } from "expo-router";
 import Animated, {
+  FadeIn,
   useAnimatedStyle,
   withTiming,
   Easing,
@@ -48,7 +49,6 @@ export function Drawer() {
     setPendingDeleteId(null);
     if (pathname === `/chat/${chatId}`) {
       router.replace("/");
-      close();
     }
   }
 
@@ -118,27 +118,27 @@ export function Drawer() {
                 {chat.title}
               </Text>
               {pendingDeleteId === chat.id ? (
-                <View style={styles.confirmRow}>
+                <Animated.View entering={FadeIn.duration(120)} style={styles.confirmRow}>
                   <TouchableOpacity
                     onPress={() => confirmDeleteChat(chat.id)}
                     hitSlop={8}
                   >
-                    <SymbolView name="checkmark" size={14} tintColor="rgba(255,255,255,0.45)" />
+                    <SymbolView name="checkmark.circle.fill" size={16} tintColor="rgba(255,255,255,0.45)" />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => setPendingDeleteId(null)}
                     hitSlop={8}
                   >
-                    <SymbolView name="xmark" size={14} tintColor="rgba(255,255,255,0.45)" />
+                    <SymbolView name="xmark.circle" size={16} tintColor="rgba(255,255,255,0.45)" />
                   </TouchableOpacity>
-                </View>
+                </Animated.View>
               ) : (
                 <TouchableOpacity
                   onPress={() => setPendingDeleteId(chat.id)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={styles.deleteButton}
                 >
-                  <SymbolView name="trash" size={14} tintColor="rgba(255,255,255,0.3)" />
+                  <SymbolView name="trash.fill" size={16} tintColor="rgba(255,255,255,0.35)" />
                 </TouchableOpacity>
               )}
             </TouchableOpacity>

@@ -12,17 +12,17 @@ export function ThinkingDropdown({ reasoning, isStreaming }: ThinkingDropdownPro
   const contentWidth = width - 32;
 
   const [expanded, setExpanded] = useState(false);
+  const [finalDurationMs, setFinalDurationMs] = useState(0);
   const startTime = useRef(0);
-  const finalMs = useRef(0);
   const shimmer = useRef(new Animated.Value(1)).current;
 
-  // Track actual elapsed time
+  // Track actual elapsed time; use state so label re-renders when streaming ends
   useEffect(() => {
     if (isStreaming) {
       startTime.current = Date.now();
-      finalMs.current = 0;
+      setFinalDurationMs(0);
     } else if (startTime.current > 0) {
-      finalMs.current = Date.now() - startTime.current;
+      setFinalDurationMs(Date.now() - startTime.current);
     }
   }, [isStreaming]);
 
@@ -52,8 +52,8 @@ export function ThinkingDropdown({ reasoning, isStreaming }: ThinkingDropdownPro
 
   const label = isStreaming
     ? `Thinking...`
-    : finalMs.current >= 2000
-    ? `Thought for ${Math.round(finalMs.current / 1000)}s`
+    : finalDurationMs >= 2000
+    ? `Thought for ${Math.round(finalDurationMs / 1000)}s`
     : "Thought";
 
   return (
