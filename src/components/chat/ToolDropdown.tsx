@@ -12,7 +12,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 
 type ToolDropdownProps = {
   toolName: string;
-  state: ToolPart["state"];
+  state?: "input-streaming" | "input-available" | "output-available" | "output-error";
   input?: unknown;
   output?: unknown;
   errorText?: string;

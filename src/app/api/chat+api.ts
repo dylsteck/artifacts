@@ -7,10 +7,10 @@ const GATEWAY_MODELS: Record<string, string> = {
   "claude-sonnet-4-6": "anthropic/claude-sonnet-4.6",
   "claude-opus-4-6": "anthropic/claude-opus-4.6",
   "claude-haiku-4-5-20251001": "anthropic/claude-haiku-4.5",
-  // xAI
-  "grok-3": "xai/grok-3",
-  "grok-3-latest": "xai/grok-3-latest",
-  "grok-3-mini": "xai/grok-3-mini",
+  // xAI (Grok 3 mapped to supported Grok 4.1 models)
+  "grok-3": "xai/grok-4.1-fast-reasoning",
+  "grok-3-latest": "xai/grok-4.1-fast-reasoning",
+  "grok-3-mini": "xai/grok-4.1-fast-non-reasoning",
 };
 
 const XAI_MODELS = ["grok-3", "grok-3-latest", "grok-3-mini"] as const;

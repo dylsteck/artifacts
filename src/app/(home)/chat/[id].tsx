@@ -25,6 +25,7 @@ import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useModel } from "@/lib/model-context";
 import { generateAPIUrl } from "@/lib/generate-api-url";
+import * as Clipboard from "expo-clipboard";
 import {
   getChatMessages,
   saveMessage,
@@ -60,6 +61,7 @@ function ChatContent({
   const listHeightRef = useRef(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [copyMenuMessageId, setCopyMenuMessageId] = useState<string | null>(null);
   const titleSet = useRef(false);
   const initialSent = useRef(false);
   const autoScrollRef = useRef(true);
@@ -88,6 +90,13 @@ function ChatContent({
       await saveMessage(db, { chatId: id, role: "assistant", content: textContent });
     },
   });
+
+  const isStreaming = status === "streaming";
+
+  const dismissKeyboard = useCallback(() => {
+    setCopyMenuMessageId(null);
+    Keyboard.dismiss();
+  }, []);
 
   useEffect(() => {
     if (initialMessageToSend && !initialSent.current) {
@@ -192,12 +201,6 @@ function ChatContent({
     [db, id, sendMessage]
   );
 
-  const isStreaming = status === "streaming";
-
-  const dismissKeyboard = useCallback(() => {
-    Keyboard.dismiss();
-  }, []);
-
   const renderItem = useCallback(
     ({ item, index }: { item: (typeof messages)[0]; index: number }) => {
       const isLast = index === messages.length - 1;
@@ -237,6 +240,11 @@ function ChatContent({
             errorText: part.errorText,
           };
         });
+      const handleCopyPress = () => {
+        void Clipboard.setStringAsync(textContent);
+        setCopyMenuMessageId(null);
+      };
+
       return (
         <Pressable onPress={dismissKeyboard}>
           <MessageBubble
@@ -245,11 +253,19 @@ function ChatContent({
             reasoning={reasoningContent || undefined}
             toolParts={toolParts}
             isStreaming={isStreaming && isLast && role === "assistant"}
+            onPress={dismissKeyboard}
+            showCopyMenu={copyMenuMessageId === item.id}
+            onLongPressRequestCopy={
+              role === "user" && textContent.trim()
+                ? () => setCopyMenuMessageId(item.id)
+                : undefined
+            }
+            onCopyPress={role === "user" ? handleCopyPress : undefined}
           />
         </Pressable>
       );
     },
-    [messages, isStreaming, dismissKeyboard]
+    [messages, isStreaming, dismissKeyboard, copyMenuMessageId]
   );
 
   return (

@@ -1,10 +1,11 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useCallback } from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { ThinkingDropdown } from "./ThinkingDropdown";
 import { ToolDropdown } from "./ToolDropdown";
 import { MarkdownContent } from "./MarkdownContent";
 
 type ToolPartInfo = {
+  key: string;
   toolName: string;
   state?: "input-streaming" | "input-available" | "output-available" | "output-error";
   input?: unknown;
@@ -18,6 +19,10 @@ type MessageBubbleProps = {
   reasoning?: string;
   toolParts?: ToolPartInfo[];
   isStreaming?: boolean;
+  onPress?: () => void;
+  showCopyMenu?: boolean;
+  onLongPressRequestCopy?: () => void;
+  onCopyPress?: () => void;
 };
 
 export function MessageBubble({
@@ -26,14 +31,40 @@ export function MessageBubble({
   reasoning,
   toolParts = [],
   isStreaming = false,
+  onPress,
+  showCopyMenu = false,
+  onLongPressRequestCopy,
+  onCopyPress,
 }: MessageBubbleProps) {
   const isUser = role === "user";
+
+  const handleLongPress = useCallback(() => {
+    if (!content?.trim()) return;
+    onLongPressRequestCopy?.();
+  }, [content, onLongPressRequestCopy]);
 
   return (
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}>
       {isUser ? (
-        <View style={styles.userBubble}>
-          <Text style={styles.userText}>{content}</Text>
+        <View style={styles.userBubbleWrapper}>
+          <Pressable
+            onPress={onPress}
+            onLongPress={handleLongPress}
+            delayLongPress={400}
+          >
+            <View style={styles.userBubble}>
+              <Text style={styles.userText}>{content}</Text>
+            </View>
+          </Pressable>
+          {showCopyMenu && onCopyPress ? (
+            <Pressable
+              style={styles.copyPill}
+              onPress={onCopyPress}
+              hitSlop={8}
+            >
+              <Text style={styles.copyPillText}>Copy</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : (
         <View style={styles.assistantBubble}>
@@ -70,6 +101,21 @@ const styles = StyleSheet.create({
   },
   rowUser: {
     alignItems: "flex-end",
+  },
+  userBubbleWrapper: {
+    alignItems: "flex-end",
+    gap: 6,
+  },
+  copyPill: {
+    backgroundColor: "#3A3A3C",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  copyPillText: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 14,
+    fontWeight: "500",
   },
   rowAssistant: {
     alignItems: "flex-start",
