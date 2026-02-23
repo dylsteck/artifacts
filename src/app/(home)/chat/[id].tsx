@@ -113,18 +113,6 @@ function ChatContent({
     }
   }, [messages.length]);
 
-  // Log streaming chunks
-  useEffect(() => {
-    const last = messages[messages.length - 1];
-    if (last?.role === "assistant") {
-      const text = last.parts
-        .filter((p) => p.type === "text")
-        .map((p) => (p as { type: "text"; text: string }).text)
-        .join("");
-      if (text) console.log("[LLM] Stream:", text.slice(-80));
-    }
-  }, [messages]);
-
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";

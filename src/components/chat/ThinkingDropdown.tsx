@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Pressable, Animated, useWindowDimensions } from "react-native";
+import { SymbolView } from "expo-symbols";
 
 type ThinkingDropdownProps = {
   reasoning: string;
@@ -8,15 +9,27 @@ type ThinkingDropdownProps = {
 
 export function ThinkingDropdown({ reasoning, isStreaming }: ThinkingDropdownProps) {
   const { width } = useWindowDimensions();
-  // row has paddingHorizontal: 16 on each side
   const contentWidth = width - 32;
+
   const [expanded, setExpanded] = useState(true);
+  const startTime = useRef(0);
+  const finalMs = useRef(0);
   const shimmer = useRef(new Animated.Value(1)).current;
 
-  // Auto-collapse shortly after streaming finishes
+  // Track actual elapsed time
+  useEffect(() => {
+    if (isStreaming) {
+      startTime.current = Date.now();
+      finalMs.current = 0;
+    } else if (startTime.current > 0) {
+      finalMs.current = Date.now() - startTime.current;
+    }
+  }, [isStreaming]);
+
+  // Auto-collapse when streaming finishes
   useEffect(() => {
     if (!isStreaming) {
-      const timer = setTimeout(() => setExpanded(false), 600);
+      const timer = setTimeout(() => setExpanded(false), 500);
       return () => clearTimeout(timer);
     } else {
       setExpanded(true);
@@ -28,54 +41,46 @@ export function ThinkingDropdown({ reasoning, isStreaming }: ThinkingDropdownPro
     if (isStreaming) {
       const loop = Animated.loop(
         Animated.sequence([
-          Animated.timing(shimmer, {
-            toValue: 0.35,
-            duration: 900,
-            useNativeDriver: true,
-          }),
-          Animated.timing(shimmer, {
-            toValue: 1,
-            duration: 900,
-            useNativeDriver: true,
-          }),
+          Animated.timing(shimmer, { toValue: 0.4, duration: 900, useNativeDriver: true }),
+          Animated.timing(shimmer, { toValue: 1, duration: 900, useNativeDriver: true }),
         ])
       );
       loop.start();
       return () => loop.stop();
     } else {
-      Animated.timing(shimmer, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+      Animated.timing(shimmer, { toValue: 0.6, duration: 200, useNativeDriver: true }).start();
     }
   }, [isStreaming]);
 
+  const label = isStreaming
+    ? `Thinking...`
+    : finalMs.current >= 2000
+    ? `Thought for ${Math.round(finalMs.current / 1000)}s`
+    : "Thought";
+
   return (
     <View style={[styles.wrapper, { width: contentWidth }]}>
-      <Pressable
-        style={styles.header}
-        onPress={() => setExpanded((v) => !v)}
-        hitSlop={8}
-      >
-        <Animated.Text style={[styles.label, { opacity: shimmer }]}>
-          {isStreaming ? "Thinking..." : "Thought"}
-        </Animated.Text>
-        <Text style={styles.chevron}>{expanded ? "⌃" : "⌄"}</Text>
+      <Pressable style={styles.header} onPress={() => setExpanded((v) => !v)} hitSlop={8}>
+        <Animated.View style={{ opacity: shimmer }}>
+          <SymbolView name="brain" size={14} tintColor="rgba(255,255,255,0.55)" />
+        </Animated.View>
+        <Animated.Text style={[styles.label, { opacity: shimmer }]}>{label}</Animated.Text>
+        <SymbolView
+          name={expanded ? "chevron.down" : "chevron.right"}
+          size={11}
+          tintColor="rgba(255,255,255,0.35)"
+        />
       </Pressable>
-      {expanded && (
-        <View style={styles.body}>
-          <View style={styles.bar} />
-          <Text style={styles.text}>{reasoning}</Text>
-        </View>
-      )}
+      {expanded && reasoning ? (
+        <Text style={styles.text}>{reasoning}</Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
-    gap: 6,
+    gap: 10,
   },
   header: {
     flexDirection: "row",
@@ -83,30 +88,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   label: {
-    color: "rgba(255,255,255,0.45)",
-    fontSize: 13,
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 14,
     fontWeight: "500",
-    letterSpacing: 0.1,
-  },
-  chevron: {
-    color: "rgba(255,255,255,0.3)",
-    fontSize: 11,
-  },
-  body: {
-    flexDirection: "row",
-    gap: 10,
-    paddingLeft: 2,
-  },
-  bar: {
-    width: 2,
-    borderRadius: 1,
-    backgroundColor: "rgba(255,255,255,0.15)",
   },
   text: {
-    flex: 1,
-    color: "rgba(255,255,255,0.35)",
-    fontSize: 13,
-    lineHeight: 19,
-    fontStyle: "italic",
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 4,
   },
 });

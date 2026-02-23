@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   assistantBubble: {
     maxWidth: "92%",
     paddingVertical: 4,
-    gap: 8,
+    gap: 14,
   },
   assistantText: {
     color: "rgba(255,255,255,0.9)",
