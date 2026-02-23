@@ -76,7 +76,6 @@ function ChatContent({
       const textContent =
         textParts.map((p) => (p as { type: "text"; text: string }).text).join("") ||
         reasoningParts.map((p) => (p as { type: "reasoning"; text: string }).text).join("");
-      console.log("[LLM] Complete:", textContent || "(empty)", "parts:", message.parts.length);
       await saveMessage(db, { chatId: id, role: "assistant", content: textContent });
     },
   });
@@ -201,7 +200,7 @@ function ChatContent({
       />
       <KeyboardStickyView
         style={styles.composerSticky}
-        offset={{ closed: 0, opened: 8 }}
+        offset={{ closed: 0, opened: 20 }}
       >
         <ChatInput
           onSend={handleSend}

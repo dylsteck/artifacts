@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Keyboard, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
-import Svg, { Path, Circle } from "react-native-svg";
 import { useSQLiteContext } from "expo-sqlite";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useModel } from "@/lib/model-context";
@@ -10,20 +9,6 @@ import { createChat } from "@/lib/db";
 
 const COMPOSER_BOTTOM_INSET = 100;
 
-// Anthropic spark/diamond logo
-function SparkLogo({ size = 48 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      {/* Anthropic "A" spark shape — stylized diamond/spark */}
-      <Path
-        d="M24 4 L30 18 L44 18 L33 28 L37 42 L24 34 L11 42 L15 28 L4 18 L18 18 Z"
-        fill="#E0745A"
-        opacity={0.95}
-      />
-      <Circle cx="24" cy="24" r="5" fill="#1C1C1E" />
-    </Svg>
-  );
-}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -52,14 +37,13 @@ export default function HomeScreen() {
       >
         <View style={styles.spacer} />
         <Pressable style={styles.welcomeArea} onPress={Keyboard.dismiss}>
-          <SparkLogo size={52} />
           <Text style={styles.welcomeText}>How can I help you today?</Text>
         </Pressable>
         <View style={styles.spacer} />
       </ScrollView>
       <KeyboardStickyView
         style={styles.composerSticky}
-        offset={{ closed: 0, opened: 8 }}
+        offset={{ closed: 0, opened: 20 }}
       >
         <ChatInput onSend={handleSend} />
       </KeyboardStickyView>

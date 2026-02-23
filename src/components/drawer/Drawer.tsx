@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Alert,
 } from "react-native";
 import { SymbolView } from "expo-symbols";
 import { useRouter, usePathname } from "expo-router";
@@ -28,6 +27,7 @@ export function Drawer() {
   const insets = useSafeAreaInsets();
   const db = useSQLiteContext();
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   // Load recent chats whenever drawer opens
   useEffect(() => {
@@ -42,22 +42,14 @@ export function Drawer() {
     }
   }, [isOpen]);
 
-  async function handleDeleteChat(chatId: string) {
-    Alert.alert("Delete Chat", "Remove this chat from history?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          await deleteChat(db, chatId);
-          setRecentChats((prev) => prev.filter((c) => c.id !== chatId));
-          if (pathname === `/chat/${chatId}`) {
-            router.replace("/");
-            close();
-          }
-        },
-      },
-    ]);
+  async function confirmDeleteChat(chatId: string) {
+    await deleteChat(db, chatId);
+    setRecentChats((prev) => prev.filter((c) => c.id !== chatId));
+    setPendingDeleteId(null);
+    if (pathname === `/chat/${chatId}`) {
+      router.replace("/");
+      close();
+    }
   }
 
   // Drawer panel slides from -DRAWER_WIDTH (hidden) to 0 (visible)
@@ -89,7 +81,7 @@ export function Drawer() {
             style={styles.navItem}
             onPress={() => { router.push("/"); close(); }}
           >
-            <SymbolView name="bubble.left.fill" size={20} tintColor="rgba(255,255,255,0.85)" />
+            <SymbolView name="bubble.left.and.bubble.right" size={20} tintColor="rgba(255,255,255,0.85)" />
             <Text style={styles.navLabel}>Chat</Text>
           </TouchableOpacity>
 
@@ -97,7 +89,7 @@ export function Drawer() {
             style={styles.navItem}
             onPress={() => { router.push("/artifacts"); close(); }}
           >
-            <SymbolView name="square.grid.2x2.fill" size={20} tintColor="rgba(255,255,255,0.85)" />
+            <SymbolView name="sparkles" size={20} tintColor="rgba(255,255,255,0.85)" />
             <Text style={styles.navLabel}>Artifacts</Text>
           </TouchableOpacity>
         </View>
@@ -113,6 +105,10 @@ export function Drawer() {
               key={chat.id}
               style={styles.chatItem}
               onPress={() => {
+                if (pendingDeleteId === chat.id) {
+                  setPendingDeleteId(null);
+                  return;
+                }
                 router.push({ pathname: "/chat/[id]", params: { id: chat.id } });
                 close();
               }}
@@ -121,17 +117,30 @@ export function Drawer() {
               <Text style={styles.chatTitle} numberOfLines={1}>
                 {chat.title}
               </Text>
-              <TouchableOpacity
-                onPress={() => handleDeleteChat(chat.id)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={styles.deleteButton}
-              >
-                <SymbolView
-                  name="trash"
-                  size={14}
-                  tintColor="rgba(255,255,255,0.3)"
-                />
-              </TouchableOpacity>
+              {pendingDeleteId === chat.id ? (
+                <View style={styles.confirmRow}>
+                  <TouchableOpacity
+                    onPress={() => confirmDeleteChat(chat.id)}
+                    hitSlop={8}
+                  >
+                    <SymbolView name="checkmark" size={14} tintColor="rgba(255,255,255,0.45)" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setPendingDeleteId(null)}
+                    hitSlop={8}
+                  >
+                    <SymbolView name="xmark" size={14} tintColor="rgba(255,255,255,0.45)" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => setPendingDeleteId(chat.id)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.deleteButton}
+                >
+                  <SymbolView name="trash" size={14} tintColor="rgba(255,255,255,0.3)" />
+                </TouchableOpacity>
+              )}
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -175,7 +184,7 @@ const styles = StyleSheet.create({
   },
   brandTitle: {
     fontSize: 30,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#FFFFFF",
     letterSpacing: -0.5,
   },
@@ -234,6 +243,11 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: 4,
+  },
+  confirmRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   bottomRow: {
     flexDirection: "row",
