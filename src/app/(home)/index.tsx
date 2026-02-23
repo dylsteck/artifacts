@@ -1,14 +1,10 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Keyboard, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Keyboard, Platform, KeyboardAvoidingView } from "react-native";
 import { useRouter } from "expo-router";
-import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSQLiteContext } from "expo-sqlite";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useModel } from "@/lib/model-context";
 import { createChat } from "@/lib/db";
-
-const COMPOSER_BOTTOM_INSET = 100;
-
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -23,15 +19,14 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
+    >
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          Platform.OS !== "ios" && { paddingBottom: COMPOSER_BOTTOM_INSET },
-        ]}
-        contentInset={Platform.OS === "ios" ? { bottom: COMPOSER_BOTTOM_INSET } : undefined}
-        scrollIndicatorInsets={Platform.OS === "ios" ? { bottom: COMPOSER_BOTTOM_INSET } : undefined}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -41,13 +36,10 @@ export default function HomeScreen() {
         </Pressable>
         <View style={styles.spacer} />
       </ScrollView>
-      <KeyboardStickyView
-        style={styles.composerSticky}
-        offset={{ closed: 0, opened: 20 }}
-      >
+      <View style={styles.inputWrapper}>
         <ChatInput onSend={handleSend} />
-      </KeyboardStickyView>
-    </View>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -62,12 +54,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
-  composerSticky: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
   spacer: {
     flex: 1,
     minHeight: 40,
@@ -75,7 +61,6 @@ const styles = StyleSheet.create({
   welcomeArea: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 20,
     paddingHorizontal: 32,
   },
   welcomeText: {
@@ -85,5 +70,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 36,
     letterSpacing: -0.3,
+  },
+  inputWrapper: {
+    backgroundColor: "#1C1C1E",
+    paddingTop: 8,
   },
 });
