@@ -1,8 +1,11 @@
 import React, { useCallback } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
+import { Renderer } from "@json-render/react-native";
 import { ThinkingDropdown } from "./ThinkingDropdown";
 import { ToolDropdown } from "./ToolDropdown";
 import { MarkdownContent } from "./MarkdownContent";
+import { registry, JsonRenderProviders } from "@/lib/json-render-registry";
+import type { Spec } from "@json-render/core";
 
 type ToolPartInfo = {
   key: string;
@@ -19,6 +22,8 @@ type MessageBubbleProps = {
   reasoning?: string;
   toolParts?: ToolPartInfo[];
   isStreaming?: boolean;
+  spec?: Spec | null;
+  hasSpec?: boolean;
   onPress?: () => void;
   showCopyMenu?: boolean;
   onLongPressRequestCopy?: () => void;
@@ -31,6 +36,8 @@ export function MessageBubble({
   reasoning,
   toolParts = [],
   isStreaming = false,
+  spec = null,
+  hasSpec = false,
   onPress,
   showCopyMenu = false,
   onLongPressRequestCopy,
@@ -87,6 +94,16 @@ export function MessageBubble({
           ))}
           {content ? (
             <MarkdownContent content={content} isStreaming={isStreaming} />
+          ) : null}
+          {hasSpec && spec ? (
+            <JsonRenderProviders initialState={spec.state ?? {}}>
+              <Renderer
+                spec={spec}
+                registry={registry}
+                loading={isStreaming}
+                includeStandard={false}
+              />
+            </JsonRenderProviders>
           ) : null}
         </View>
       )}

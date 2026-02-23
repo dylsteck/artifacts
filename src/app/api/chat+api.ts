@@ -1,5 +1,13 @@
-import { streamText, convertToModelMessages, type UIMessage } from "ai";
+import {
+  streamText,
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type UIMessage,
+} from "ai";
+import { pipeJsonRender } from "@json-render/core";
 import { gateway } from "@ai-sdk/gateway";
+import { catalog } from "@/lib/json-render-catalog";
 
 // Maps internal model IDs to Vercel AI Gateway model IDs
 const GATEWAY_MODELS: Record<string, string> = {
@@ -30,6 +38,7 @@ export async function POST(req: Request) {
   try {
     const result = streamText({
       model: gateway(gatewayModelId),
+      system: catalog.prompt({ mode: "chat" }),
       messages: await convertToModelMessages(messages),
       maxOutputTokens: 4096,
       ...(XAI_MODELS.includes(model as (typeof XAI_MODELS)[number]) && {
@@ -45,8 +54,18 @@ export async function POST(req: Request) {
       }),
     });
 
-    return result.toUIMessageStreamResponse({
-      sendReasoning: true,
+    const stream = createUIMessageStream({
+      execute: async ({ writer }) => {
+        writer.merge(
+          pipeJsonRender(
+            result.toUIMessageStream({ sendReasoning: true }) as ReadableStream
+          )
+        );
+      },
+    });
+
+    return createUIMessageStreamResponse({
+      stream,
       headers: {
         "Content-Type": "application/octet-stream",
         "Content-Encoding": "none",

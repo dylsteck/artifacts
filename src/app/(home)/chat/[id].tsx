@@ -22,6 +22,7 @@ import { DefaultChatTransport } from "ai";
 import { fetch as expoFetch } from "expo/fetch";
 import { useSQLiteContext } from "expo-sqlite";
 import { MessageBubble } from "@/components/chat/MessageBubble";
+import { useJsonRenderMessage } from "@/lib/use-json-render-message";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useModel } from "@/lib/model-context";
 import { generateAPIUrl } from "@/lib/generate-api-url";
@@ -40,6 +41,64 @@ function toUIMessages(
     role: m.role as "user" | "assistant",
     parts: [{ type: "text" as const, text: m.content }],
   }));
+}
+
+function AssistantMessageBubble({
+  item,
+  isStreaming,
+  dismissKeyboard,
+}: {
+  item: UIMessage;
+  isStreaming: boolean;
+  dismissKeyboard: () => void;
+}) {
+  const { spec, text, hasSpec } = useJsonRenderMessage(item.parts);
+  const reasoningContent = item.parts
+    .filter((p) => p.type === "reasoning")
+    .map((p) => (p as { type: "reasoning"; text: string }).text)
+    .join("");
+  const toolParts = item.parts
+    .filter(
+      (p) =>
+        typeof p.type === "string" &&
+        (p.type.startsWith("tool-") || p.type === "dynamic-tool")
+    )
+    .map((p, i) => {
+      const part = p as {
+        type: string;
+        toolCallId?: string;
+        toolName?: string;
+        state?: "input-streaming" | "input-available" | "output-available" | "output-error";
+        input?: unknown;
+        output?: unknown;
+        errorText?: string;
+      };
+      const toolName =
+        part.type === "dynamic-tool" ? part.toolName ?? "tool" : part.type;
+      return {
+        key: part.toolCallId ?? `${item.id}-tool-${i}`,
+        toolName,
+        state: part.state,
+        input: part.input,
+        output: part.output,
+        errorText: part.errorText,
+      };
+    });
+
+  return (
+    <Pressable onPress={dismissKeyboard}>
+      <MessageBubble
+        role="assistant"
+        content={text}
+        reasoning={reasoningContent || undefined}
+        toolParts={toolParts}
+        isStreaming={isStreaming}
+        spec={spec}
+        hasSpec={hasSpec}
+        onPress={dismissKeyboard}
+      />
+    </Pressable>
+  );
 }
 
 function ChatContent({
@@ -205,41 +264,21 @@ function ChatContent({
     ({ item, index }: { item: (typeof messages)[0]; index: number }) => {
       const isLast = index === messages.length - 1;
       const role = item.role as "user" | "assistant";
+
+      if (role === "assistant") {
+        return (
+          <AssistantMessageBubble
+            item={item}
+            isStreaming={isStreaming && isLast}
+            dismissKeyboard={dismissKeyboard}
+          />
+        );
+      }
+
       const textContent = item.parts
         .filter((p) => p.type === "text")
         .map((p) => (p as { type: "text"; text: string }).text)
         .join("");
-      const reasoningContent = item.parts
-        .filter((p) => p.type === "reasoning")
-        .map((p) => (p as { type: "reasoning"; text: string }).text)
-        .join("");
-      const toolParts = item.parts
-        .filter(
-          (p) =>
-            typeof p.type === "string" &&
-            (p.type.startsWith("tool-") || p.type === "dynamic-tool")
-        )
-        .map((p, i) => {
-          const part = p as {
-            type: string;
-            toolCallId?: string;
-            toolName?: string;
-            state?: "input-streaming" | "input-available" | "output-available" | "output-error";
-            input?: unknown;
-            output?: unknown;
-            errorText?: string;
-          };
-          const toolName =
-            part.type === "dynamic-tool" ? part.toolName ?? "tool" : part.type;
-          return {
-            key: part.toolCallId ?? `${item.id}-tool-${i}`,
-            toolName,
-            state: part.state,
-            input: part.input,
-            output: part.output,
-            errorText: part.errorText,
-          };
-        });
       const handleCopyPress = () => {
         void Clipboard.setStringAsync(textContent);
         setCopyMenuMessageId(null);
@@ -248,19 +287,14 @@ function ChatContent({
       return (
         <Pressable onPress={dismissKeyboard}>
           <MessageBubble
-            role={role}
+            role="user"
             content={textContent}
-            reasoning={reasoningContent || undefined}
-            toolParts={toolParts}
-            isStreaming={isStreaming && isLast && role === "assistant"}
             onPress={dismissKeyboard}
             showCopyMenu={copyMenuMessageId === item.id}
             onLongPressRequestCopy={
-              role === "user" && textContent.trim()
-                ? () => setCopyMenuMessageId(item.id)
-                : undefined
+              textContent.trim() ? () => setCopyMenuMessageId(item.id) : undefined
             }
-            onCopyPress={role === "user" ? handleCopyPress : undefined}
+            onCopyPress={handleCopyPress}
           />
         </Pressable>
       );

@@ -9,6 +9,8 @@
         "@ai-sdk/react": "^3.0.99",
         "@bacons/apple-colors": "^0.0.8",
         "@expo/html-elements": "^0.13.6",
+        "@json-render/core": "^0.8.0",
+        "@json-render/react-native": "^0.8.0",
         "@react-navigation/elements": "^2.9.5",
         "ai": "^6.0.97",
         "clsx": "^2.1.1",
@@ -39,6 +41,7 @@
         "react-native-worklets": "0.5.1",
         "tailwind-merge": "^3.3.1",
         "tailwindcss": "^3.4.0",
+        "zod": "^4.3.6",
       },
       "devDependencies": {
         "@types/react": "~19.1.10",
@@ -336,6 +339,10 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
+
+    "@json-render/core": ["@json-render/core@0.8.0", "", { "dependencies": { "zod": "^4.0.0" } }, "sha512-EdUJtjogqt+e9vG9DodIaPYTHDpuEKCe+C27zEtP9fKlL6bWacA8X3lpGtxf6WkswarIhdrhUxeqR9ZAqs+7HQ=="],
+
+    "@json-render/react-native": ["@json-render/react-native@0.8.0", "", { "dependencies": { "@json-render/core": "0.8.0" }, "peerDependencies": { "react": "^19.0.0", "react-native": ">=0.71.0", "zod": "^4.0.0" } }, "sha512-yYvxOxdp6FXdeBuKcNtCN89J8J01CU8LCvleTgy7WR1LfaCLTHs6AUjiiGYuTV24bbHA+TFaRulJxN25+qE8oQ=="],
 
     "@nodelib/fs.scandir": ["@nodelib/fs.scandir@2.1.5", "", { "dependencies": { "@nodelib/fs.stat": "2.0.5", "run-parallel": "^1.1.9" } }, "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g=="],
 
