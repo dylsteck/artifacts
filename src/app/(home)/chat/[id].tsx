@@ -162,13 +162,12 @@ function ChatContent({
         .filter((p) => p.type === "reasoning")
         .map((p) => (p as { type: "reasoning"; text: string }).text)
         .join("");
-      const content = textContent || reasoningContent;
-
       return (
         <Pressable onPress={dismissKeyboard}>
           <MessageBubble
             role={role}
-            content={content}
+            content={textContent}
+            reasoning={reasoningContent || undefined}
             isStreaming={isStreaming && isLast && role === "assistant"}
           />
         </Pressable>
