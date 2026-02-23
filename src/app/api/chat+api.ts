@@ -2,15 +2,18 @@ import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import { gateway } from "@ai-sdk/gateway";
 
 // Maps internal model IDs to Vercel AI Gateway model IDs
-// Gateway format: "provider/model-major.minor" (dot for minor version)
 const GATEWAY_MODELS: Record<string, string> = {
+  // Anthropic
   "claude-sonnet-4-6": "anthropic/claude-sonnet-4.6",
   "claude-opus-4-6": "anthropic/claude-opus-4.6",
   "claude-haiku-4-5-20251001": "anthropic/claude-haiku-4.5",
+  // xAI
+  "grok-3": "xai/grok-3",
+  "grok-3-mini": "xai/grok-3-mini",
 };
 
 function toGatewayModelId(id: string): string {
-  return GATEWAY_MODELS[id] ?? `anthropic/${id}`;
+  return GATEWAY_MODELS[id] ?? id;
 }
 
 export async function POST(req: Request) {

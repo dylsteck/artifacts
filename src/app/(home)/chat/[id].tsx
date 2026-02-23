@@ -106,10 +106,10 @@ function ChatContent({
     }
   }, [messages]);
 
-  // Scroll to newest message (offset 0 = bottom in inverted FlatList)
+  // Scroll to newest message at bottom
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }), 80);
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
     }
   }, [messages.length]);
 
@@ -150,10 +150,9 @@ function ChatContent({
     Keyboard.dismiss();
   }, []);
 
-  // inverted FlatList: index 0 = newest message (rendered at bottom)
   const renderItem = useCallback(
     ({ item, index }: { item: (typeof messages)[0]; index: number }) => {
-      const isLast = index === 0;
+      const isLast = index === messages.length - 1;
       const role = item.role as "user" | "assistant";
       const textContent = item.parts
         .filter((p) => p.type === "text")
@@ -182,24 +181,20 @@ function ChatContent({
     <View style={styles.container}>
       <FlatList
         ref={listRef}
-        inverted
-        data={[...messages].reverse()}
+        data={messages}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          // inverted: paddingTop = physical bottom (chat input + safe area)
-          //           paddingBottom = physical top (nav bar space)
-          { paddingTop: COMPOSER_BOTTOM_INSET + insets.bottom },
-          { paddingBottom: insets.top + 56 },
+          { paddingTop: insets.top + 56 },
+          { paddingBottom: COMPOSER_BOTTOM_INSET + insets.bottom },
         ]}
         style={styles.list}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         onScrollBeginDrag={dismissKeyboard}
-        ListHeaderComponent={
-          // With inverted, ListHeaderComponent appears at the BOTTOM (after newest msg)
+        ListFooterComponent={
           <View>
             {error ? (
               <View style={styles.errorRow}>

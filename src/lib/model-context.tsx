@@ -18,6 +18,16 @@ export const MODELS = [
     name: "Haiku 4.5",
     context: "Standard",
   },
+  {
+    id: "grok-3",
+    name: "Grok 3",
+    context: "Extended",
+  },
+  {
+    id: "grok-3-mini",
+    name: "Grok 3 Mini",
+    context: "Fast",
+  },
 ] as const;
 
 export type ModelId = (typeof MODELS)[number]["id"];
