@@ -1,12 +1,22 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ThinkingDropdown } from "./ThinkingDropdown";
+import { ToolDropdown } from "./ToolDropdown";
 import { MarkdownContent } from "./MarkdownContent";
+
+type ToolPartInfo = {
+  toolName: string;
+  state?: "input-streaming" | "input-available" | "output-available" | "output-error";
+  input?: unknown;
+  output?: unknown;
+  errorText?: string;
+};
 
 type MessageBubbleProps = {
   role: "user" | "assistant";
   content: string;
   reasoning?: string;
+  toolParts?: ToolPartInfo[];
   isStreaming?: boolean;
 };
 
@@ -14,6 +24,7 @@ export function MessageBubble({
   role,
   content,
   reasoning,
+  toolParts = [],
   isStreaming = false,
 }: MessageBubbleProps) {
   const isUser = role === "user";
@@ -29,6 +40,20 @@ export function MessageBubble({
           {reasoning ? (
             <ThinkingDropdown reasoning={reasoning} isStreaming={isStreaming} />
           ) : null}
+          {toolParts.map((tp) => (
+            <ToolDropdown
+              key={tp.key}
+              toolName={tp.toolName}
+              state={tp.state}
+              input={tp.input}
+              output={tp.output}
+              errorText={tp.errorText}
+              isStreaming={
+                isStreaming &&
+                (tp.state === "input-streaming" || tp.state === "input-available")
+              }
+            />
+          ))}
           {content ? (
             <MarkdownContent content={content} isStreaming={isStreaming} />
           ) : null}

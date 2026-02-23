@@ -24,6 +24,11 @@ export const MODELS = [
     context: "Extended",
   },
   {
+    id: "grok-3-latest",
+    name: "Grok 3 Latest",
+    context: "Search",
+  },
+  {
     id: "grok-3-mini",
     name: "Grok 3 Mini",
     context: "Fast",

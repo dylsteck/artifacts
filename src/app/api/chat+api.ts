@@ -9,10 +9,11 @@ const GATEWAY_MODELS: Record<string, string> = {
   "claude-haiku-4-5-20251001": "anthropic/claude-haiku-4.5",
   // xAI
   "grok-3": "xai/grok-3",
+  "grok-3-latest": "xai/grok-3-latest",
   "grok-3-mini": "xai/grok-3-mini",
 };
 
-const XAI_MODELS = ["grok-3", "grok-3-mini"] as const;
+const XAI_MODELS = ["grok-3", "grok-3-latest", "grok-3-mini"] as const;
 
 function toGatewayModelId(id: string): string {
   return GATEWAY_MODELS[id] ?? id;

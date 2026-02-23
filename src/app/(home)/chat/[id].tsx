@@ -56,6 +56,8 @@ function ChatContent({
 }) {
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList>(null);
+  const contentHeightRef = useRef(0);
+  const listHeightRef = useRef(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const titleSet = useRef(false);
@@ -128,12 +130,6 @@ function ChatContent({
     }
   }, [messages.length]);
 
-  // During streaming, scroll to end on every content size change
-  const handleContentSizeChange = useCallback(() => {
-    if (autoScrollRef.current && isStreamingRef.current) {
-      listRef.current?.scrollToEnd({ animated: false });
-    }
-  }, []);
 
   // Track whether user is near bottom
   const handleScroll = useCallback(
@@ -157,9 +153,25 @@ function ChatContent({
 
   const handleScrollToBottom = useCallback(() => {
     autoScrollRef.current = true;
-    listRef.current?.scrollToEnd({ animated: true });
+    const ch = contentHeightRef.current;
+    const lh = listHeightRef.current;
+    if (lh > 0) {
+      listRef.current?.scrollToOffset({
+        offset: Math.max(0, ch - lh),
+        animated: true,
+      });
+    } else {
+      listRef.current?.scrollToEnd({ animated: true });
+    }
     setShowScrollButton(false);
   }, []);
+
+  const handleListLayout = useCallback(
+    (e: { nativeEvent: { layout: { width: number; height: number } } }) => {
+      listHeightRef.current = e.nativeEvent.layout.height;
+    },
+    []
+  );
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -198,12 +210,40 @@ function ChatContent({
         .filter((p) => p.type === "reasoning")
         .map((p) => (p as { type: "reasoning"; text: string }).text)
         .join("");
+      const toolParts = item.parts
+        .filter(
+          (p) =>
+            typeof p.type === "string" &&
+            (p.type.startsWith("tool-") || p.type === "dynamic-tool")
+        )
+        .map((p, i) => {
+          const part = p as {
+            type: string;
+            toolCallId?: string;
+            toolName?: string;
+            state?: "input-streaming" | "input-available" | "output-available" | "output-error";
+            input?: unknown;
+            output?: unknown;
+            errorText?: string;
+          };
+          const toolName =
+            part.type === "dynamic-tool" ? part.toolName ?? "tool" : part.type;
+          return {
+            key: part.toolCallId ?? `${item.id}-tool-${i}`,
+            toolName,
+            state: part.state,
+            input: part.input,
+            output: part.output,
+            errorText: part.errorText,
+          };
+        });
       return (
         <Pressable onPress={dismissKeyboard}>
           <MessageBubble
             role={role}
             content={textContent}
             reasoning={reasoningContent || undefined}
+            toolParts={toolParts}
             isStreaming={isStreaming && isLast && role === "assistant"}
           />
         </Pressable>
@@ -230,7 +270,16 @@ function ChatContent({
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        onContentSizeChange={handleContentSizeChange}
+        onContentSizeChange={(w, h) => {
+          contentHeightRef.current = h;
+          if (autoScrollRef.current && isStreamingRef.current && listHeightRef.current > 0) {
+            listRef.current?.scrollToOffset({
+              offset: Math.max(0, h - listHeightRef.current),
+              animated: false,
+            });
+          }
+        }}
+        onLayout={handleListLayout}
         onScrollBeginDrag={handleScrollBeginDrag}
         ListFooterComponent={
           <View>
