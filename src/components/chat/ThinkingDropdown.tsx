@@ -11,7 +11,7 @@ export function ThinkingDropdown({ reasoning, isStreaming }: ThinkingDropdownPro
   const { width } = useWindowDimensions();
   const contentWidth = width - 32;
 
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const startTime = useRef(0);
   const finalMs = useRef(0);
   const shimmer = useRef(new Animated.Value(1)).current;
@@ -26,13 +26,11 @@ export function ThinkingDropdown({ reasoning, isStreaming }: ThinkingDropdownPro
     }
   }, [isStreaming]);
 
-  // Auto-collapse when streaming finishes
+  // Auto-collapse when streaming finishes (if user expanded it)
   useEffect(() => {
     if (!isStreaming) {
       const timer = setTimeout(() => setExpanded(false), 500);
       return () => clearTimeout(timer);
-    } else {
-      setExpanded(true);
     }
   }, [isStreaming]);
 

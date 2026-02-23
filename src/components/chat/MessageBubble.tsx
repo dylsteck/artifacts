@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ThinkingDropdown } from "./ThinkingDropdown";
+import { MarkdownContent } from "./MarkdownContent";
 
 type MessageBubbleProps = {
   role: "user" | "assistant";
@@ -29,10 +30,7 @@ export function MessageBubble({
             <ThinkingDropdown reasoning={reasoning} isStreaming={isStreaming} />
           ) : null}
           {content ? (
-            <Text style={styles.assistantText}>
-              {content}
-              {isStreaming && <Text style={styles.cursor}>▋</Text>}
-            </Text>
+            <MarkdownContent content={content} isStreaming={isStreaming} />
           ) : null}
         </View>
       )}
@@ -68,14 +66,5 @@ const styles = StyleSheet.create({
     maxWidth: "92%",
     paddingVertical: 4,
     gap: 14,
-  },
-  assistantText: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  cursor: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 16,
   },
 });

@@ -9,7 +9,10 @@ import {
   Keyboard,
   Pressable,
   Modal,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from "react-native";
+import { SymbolView } from "expo-symbols";
 import { useLocalSearchParams } from "expo-router";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -53,8 +56,11 @@ function ChatContent({
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const titleSet = useRef(false);
   const initialSent = useRef(false);
+  const autoScrollRef = useRef(true);
+  const isStreamingRef = useRef(false);
   const COMPOSER_BOTTOM_INSET = 100;
 
   const apiUrl = generateAPIUrl("/api/chat");
@@ -105,12 +111,54 @@ function ChatContent({
     }
   }, [messages]);
 
-  // Scroll to newest message at bottom
+  // Keep isStreamingRef in sync; re-enable auto-scroll when stream finishes
+  useEffect(() => {
+    isStreamingRef.current = isStreaming;
+    if (!isStreaming) {
+      autoScrollRef.current = true;
+    }
+  }, [isStreaming]);
+
+  // Scroll to bottom when a new message is added
   useEffect(() => {
     if (messages.length > 0) {
+      autoScrollRef.current = true;
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
     }
   }, [messages.length]);
+
+  // During streaming, scroll to end on every content size change
+  const handleContentSizeChange = useCallback(() => {
+    if (autoScrollRef.current && isStreamingRef.current) {
+      listRef.current?.scrollToEnd({ animated: false });
+    }
+  }, []);
+
+  // Track whether user is near bottom
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - layoutMeasurement.height - contentOffset.y;
+      const atBottom = distanceFromBottom < 60;
+      setShowScrollButton(!atBottom);
+      if (!atBottom) {
+        autoScrollRef.current = false;
+      }
+    },
+    []
+  );
+
+  const handleScrollBeginDrag = useCallback(() => {
+    autoScrollRef.current = false;
+    dismissKeyboard();
+  }, [dismissKeyboard]);
+
+  const handleScrollToBottom = useCallback(() => {
+    autoScrollRef.current = true;
+    listRef.current?.scrollToEnd({ animated: true });
+    setShowScrollButton(false);
+  }, []);
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -179,7 +227,10 @@ function ChatContent({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-        onScrollBeginDrag={dismissKeyboard}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        onContentSizeChange={handleContentSizeChange}
+        onScrollBeginDrag={handleScrollBeginDrag}
         ListFooterComponent={
           <View>
             {error ? (
@@ -198,6 +249,17 @@ function ChatContent({
           </View>
         }
       />
+      {showScrollButton && (
+        <Pressable
+          style={[
+            styles.scrollToBottomBtn,
+            { bottom: COMPOSER_BOTTOM_INSET + insets.bottom + 12 },
+          ]}
+          onPress={handleScrollToBottom}
+        >
+          <SymbolView name="chevron.down" size={16} tintColor="rgba(255,255,255,0.8)" />
+        </Pressable>
+      )}
       <KeyboardStickyView
         style={styles.composerSticky}
         offset={{ closed: 0, opened: 20 }}
@@ -310,5 +372,20 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  scrollToBottomBtn: {
+    position: "absolute",
+    right: 20,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#3A3A3C",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
   },
 });
