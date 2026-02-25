@@ -10,12 +10,13 @@ import { gateway } from "@ai-sdk/gateway";
 import { catalog } from "@/lib/json-render-catalog";
 
 // Maps internal model IDs to Vercel AI Gateway model IDs
+// Verified against https://vercel.com/ai-gateway/models
 const GATEWAY_MODELS: Record<string, string> = {
   // Anthropic
   "claude-sonnet-4-6": "anthropic/claude-sonnet-4.6",
   "claude-opus-4-6": "anthropic/claude-opus-4.6",
   "claude-haiku-4-5-20251001": "anthropic/claude-haiku-4.5",
-  // xAI (Grok 3 mapped to supported Grok 4.1 models)
+  // xAI Grok 4.1 Fast (reasoning / non-reasoning)
   "grok-3": "xai/grok-4.1-fast-reasoning",
   "grok-3-latest": "xai/grok-4.1-fast-reasoning",
   "grok-3-mini": "xai/grok-4.1-fast-non-reasoning",

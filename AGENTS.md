@@ -362,10 +362,33 @@ AI_GATEWAY_API_KEY=your_api_key_here
 | Typed route error for `/chat/[id]` | `.expo/types/router.d.ts` not regenerated | Manually add route entry |
 | Streaming stops on native | Native fetch doesn't support proper streaming | Use `expo/fetch` polyfill |
 | `OpaqueColorValue` SVG error | `AC.label` is not a string | Wrap with `String(AC.label)` |
+| `Cannot convert undefined value to object` in json-render | LLM omits `props` on elements | Use `normalizeSpec(spec)` before passing to Renderer |
 
 ---
 
-## 10. File Reference
+## 10. JSON Render Catalog (Prompt Tuning)
+
+The app uses `@json-render/core` + `@json-render/react-native` for AI-generated UI. The catalog defines which components the model can emit. **Only reference element ids in `children` that exist in `spec.elements`**—do not reference undefined children (e.g. `"like-count"` when no such element is defined).
+
+| Component | Props |
+|-----------|-------|
+| Column | gap, alignItems, justifyContent, padding, flex |
+| Row | gap, alignItems, justifyContent, flexWrap, padding, flex |
+| Container | padding, paddingHorizontal, paddingVertical, margin, backgroundColor, borderRadius, flex |
+| Divider | direction, thickness, color, margin |
+| Paragraph | text, fontSize, color, align, numberOfLines |
+| Heading | text, level (h1–h4), color, align |
+| Label | text, size (xs/sm/md), bold, color |
+| Card | title, subtitle, padding, backgroundColor, borderRadius, elevated |
+| Button | label, variant (primary/secondary/danger/outline/ghost), size (sm/md/lg), disabled, loading |
+| TextInput | placeholder, value, label, secureTextEntry, keyboardType, multiline, numberOfLines, flex, disabled, error |
+| Switch | checked, label, disabled |
+| Checkbox | checked, label, disabled |
+| Placeholder | label, id (for missing-element fallback) |
+
+---
+
+## 11. File Reference
 
 | File | Purpose |
 |------|---------|
@@ -383,4 +406,7 @@ AI_GATEWAY_API_KEY=your_api_key_here
 | `src/lib/model-context.tsx` | Model list + provider + useModel hook |
 | `src/lib/generate-api-url.ts` | API URL construction |
 | `src/lib/utils.ts` | `cn()`, `AppleStackPreset`, `launchApp()` |
+| `src/lib/json-render-catalog.ts` | Catalog components for AI-generated UI |
+| `src/lib/json-render-registry.tsx` | Dark-theme component implementations |
+| `src/lib/normalize-spec.ts` | Ensures element.props is never undefined |
 | `.expo/types/router.d.ts` | Typed route definitions (manually maintained) |

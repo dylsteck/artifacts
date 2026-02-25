@@ -1,10 +1,11 @@
 import React, { useCallback } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView, Platform } from "react-native";
 import { Renderer } from "@json-render/react-native";
 import { ThinkingDropdown } from "./ThinkingDropdown";
 import { ToolDropdown } from "./ToolDropdown";
 import { MarkdownContent } from "./MarkdownContent";
 import { registry, JsonRenderProviders } from "@/lib/json-render-registry";
+import { normalizeSpec } from "@/lib/normalize-spec";
 import type { Spec } from "@json-render/core";
 
 type ToolPartInfo = {
@@ -96,14 +97,23 @@ export function MessageBubble({
             <MarkdownContent content={content} isStreaming={isStreaming} />
           ) : null}
           {hasSpec && spec ? (
-            <JsonRenderProviders initialState={spec.state ?? {}}>
-              <Renderer
-                spec={spec}
-                registry={registry}
-                loading={isStreaming}
-                includeStandard={false}
-              />
-            </JsonRenderProviders>
+            <View style={styles.jsonRenderContainer}>
+              <ScrollView
+                style={styles.jsonRenderScroll}
+                contentContainerStyle={styles.jsonRenderScrollContent}
+                nestedScrollEnabled={Platform.OS === "android"}
+                showsVerticalScrollIndicator={true}
+              >
+                <JsonRenderProviders initialState={spec.state ?? {}}>
+                  <Renderer
+                    spec={normalizeSpec(spec)}
+                    registry={registry}
+                    loading={isStreaming}
+                    includeStandard={false}
+                  />
+                </JsonRenderProviders>
+              </ScrollView>
+            </View>
           ) : null}
         </View>
       )}
@@ -154,5 +164,31 @@ const styles = StyleSheet.create({
     maxWidth: "92%",
     paddingVertical: 4,
     gap: 14,
+  },
+  jsonRenderContainer: {
+    marginTop: 8,
+    borderRadius: 16,
+    overflow: "hidden",
+    maxHeight: 400,
+    borderWidth: 1,
+    borderColor: "#38383A",
+    backgroundColor: "#1C1C1E",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: { elevation: 3 },
+      default: {},
+    }),
+  },
+  jsonRenderScroll: {
+    maxHeight: 400,
+  },
+  jsonRenderScrollContent: {
+    padding: 12,
+    paddingBottom: 16,
   },
 });

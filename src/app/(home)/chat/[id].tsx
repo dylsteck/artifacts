@@ -125,7 +125,7 @@ function ChatContent({
   const initialSent = useRef(false);
   const autoScrollRef = useRef(true);
   const isStreamingRef = useRef(false);
-  const COMPOSER_BOTTOM_INSET = 100;
+  const COMPOSER_BOTTOM_INSET = 150;
 
   const apiUrl = generateAPIUrl("/api/chat");
 
@@ -194,7 +194,12 @@ function ChatContent({
   useEffect(() => {
     if (messages.length > 0) {
       autoScrollRef.current = true;
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
+      const t1 = setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+      const t2 = setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 200);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
   }, [messages.length]);
 
@@ -315,14 +320,14 @@ function ChatContent({
           { paddingBottom: COMPOSER_BOTTOM_INSET + insets.bottom },
         ]}
         style={styles.list}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         onContentSizeChange={(w, h) => {
           contentHeightRef.current = h;
-          if (autoScrollRef.current && isStreamingRef.current && listHeightRef.current > 0) {
+          if (autoScrollRef.current && listHeightRef.current > 0) {
             listRef.current?.scrollToOffset({
               offset: Math.max(0, h - listHeightRef.current),
               animated: false,
