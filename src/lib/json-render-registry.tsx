@@ -9,14 +9,29 @@ import {
 } from "@json-render/react-native";
 import { catalog } from "./json-render-catalog";
 
+/** Adapt standard components (expect { element }) to defineRegistry format (passes { props }) */
+function adapt(
+  Component: React.ComponentType<{ element: { props?: unknown }; children?: React.ReactNode }>
+) {
+  return ({
+    props,
+    children,
+    ...rest
+  }: {
+    props: Record<string, unknown>;
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => <Component element={{ props }} {...rest} children={children} />;
+}
+
 /** Registry mapping catalog components to React Native implementations */
 export const { registry } = defineRegistry(catalog, {
   components: {
-    Column: standardComponents.Column,
-    Paragraph: standardComponents.Paragraph,
-    Button: standardComponents.Button,
-    Card: standardComponents.Card,
-    Heading: standardComponents.Heading,
+    Column: adapt(standardComponents.Column),
+    Paragraph: adapt(standardComponents.Paragraph),
+    Button: adapt(standardComponents.Button),
+    Card: adapt(standardComponents.Card),
+    Heading: adapt(standardComponents.Heading),
   },
 });
 
